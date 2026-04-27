@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useApp } from '../../context/AppContext'
+import { useI18n } from '../../i18n'
 import { analyzeCoreParameter } from '../../utils/analyzer'
 import { generateMicroActions } from '../../utils/generator'
 import { generateTrajectory, generateImprovedTrajectory } from '../../utils/trajectory'
 import { Button } from '../ui/Button'
-import { Card } from '../ui/Card'
 import { Textarea } from '../ui/Input'
 import { ChevronRight, ChevronLeft, Target, Zap, ArrowRight } from 'lucide-react'
 
@@ -17,6 +17,7 @@ interface CoreParameterPageProps {
 export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
   const { state, dispatch } = useApp()
   const { dailyRoutine, desiredFuture } = state.userProfile
+  const { t } = useI18n()
 
   const [step, setStep] = useState<'input' | 'result'>('input')
   const [formData, setFormData] = useState({
@@ -30,25 +31,24 @@ export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
 
   const coreParam = useMemo(() => {
     if (step === 'result') {
-      const paramName = formData.city.length > 0 ? 'work' : 'sleep'
-      return analyzeCoreParameter(dailyRoutine, desiredFuture)
+      return analyzeCoreParameter(dailyRoutine, desiredFuture, lang)
     }
     return null
-  }, [step, dailyRoutine, desiredFuture, formData])
+  }, [step, dailyRoutine, desiredFuture, lang])
 
   useEffect(() => {
     if (step === 'result' && coreParam) {
-      const currentTrajectory = generateTrajectory(dailyRoutine, 36, 0.95)
+      const currentTrajectory = generateTrajectory(dailyRoutine, 36, 0.95, lang)
 
-      const paramKey = coreParam.name.includes('睡眠') ? 'sleep' :
-                        coreParam.name.includes('运动') ? 'exercise' :
-                        coreParam.name.includes('工作') ? 'work' :
-                        coreParam.name.includes('休闲') ? 'leisure' :
-                        coreParam.name.includes('成长') ? 'growth' : 'sleep'
+      const paramKey = coreParam.name.includes('睡眠') || coreParam.name.includes('Sleep') ? 'sleep' :
+                        coreParam.name.includes('运动') || coreParam.name.includes('Exercise') ? 'exercise' :
+                        coreParam.name.includes('工作') || coreParam.name.includes('Work') ? 'work' :
+                        coreParam.name.includes('休闲') || coreParam.name.includes('Leisure') ? 'leisure' :
+                        coreParam.name.includes('成长') || coreParam.name.includes('Growth') ? 'growth' : 'sleep'
 
       const improvement = coreParam.affectedMetrics[0]?.improvement || 15
-      const newTrajectory = generateImprovedTrajectory(dailyRoutine, paramKey, improvement, 36)
-      const microActions = generateMicroActions(dailyRoutine, paramKey)
+      const newTrajectory = generateImprovedTrajectory(dailyRoutine, paramKey, improvement, 36, lang)
+      const microActions = generateMicroActions(dailyRoutine, paramKey, lang)
 
       dispatch({
         type: 'UPDATE_PROFILE',
@@ -82,10 +82,10 @@ export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
             className="mb-8"
           >
             <h1 className="font-display text-2xl font-bold text-text-primary mb-2">
-              你想要什么样的人生？
+              {t.core.inputTitle}
             </h1>
             <p className="text-text-secondary">
-              请具体描述你3年后想要的生活。越具体，分析越准确。
+              {t.core.inputSubtitle}
             </p>
           </motion.div>
 
@@ -96,43 +96,43 @@ export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
             className="space-y-5"
           >
             <Textarea
-              label="你希望在哪个城市生活？"
-              placeholder="如：杭州，有西湖，工作机会多..."
+              label={t.core.city}
+              placeholder={t.core.cityPlaceholder}
               rows={2}
               value={formData.city}
               onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
             />
             <Textarea
-              label="你理想的生活节奏是什么样的？"
-              placeholder="如：朝九晚六，周末双休，有时间发展爱好..."
+              label={t.core.lifestyle}
+              placeholder={t.core.lifestylePlaceholder}
               rows={2}
               value={formData.lifestyle}
               onChange={(e) => setFormData(prev => ({ ...prev, lifestyle: e.target.value }))}
             />
             <Textarea
-              label="你想和谁在一起？"
-              placeholder="如：和志同道合的朋友，有稳定的亲密关系..."
+              label={t.core.relationships}
+              placeholder={t.core.relationshipsPlaceholder}
               rows={2}
               value={formData.relationships}
               onChange={(e) => setFormData(prev => ({ ...prev, relationships: e.target.value }))}
             />
             <Textarea
-              label="你的财务目标是什么？"
-              placeholder="如：存款达到X万，有稳定的被动收入..."
+              label={t.core.financial}
+              placeholder={t.core.financialPlaceholder}
               rows={2}
               value={formData.financial}
               onChange={(e) => setFormData(prev => ({ ...prev, financial: e.target.value }))}
             />
             <Textarea
-              label="你希望的健康状态是什么样的？"
-              placeholder="如：体检无异常指标，每天精力充沛..."
+              label={t.core.health}
+              placeholder={t.core.healthPlaceholder}
               rows={2}
               value={formData.health}
               onChange={(e) => setFormData(prev => ({ ...prev, health: e.target.value }))}
             />
             <Textarea
-              label="描述一下你理想的一天"
-              placeholder="如：7点起床，运动30分钟，8点吃早餐，9点开始工作..."
+              label={t.core.dailySchedule}
+              placeholder={t.core.dailySchedulePlaceholder}
               rows={3}
               value={formData.dailySchedule}
               onChange={(e) => setFormData(prev => ({ ...prev, dailySchedule: e.target.value }))}
@@ -146,10 +146,10 @@ export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
             className="flex justify-between items-center mt-8"
           >
             <Button variant="ghost" onClick={onBack}>
-              <ChevronLeft size={18} /> 上一步
+              <ChevronLeft size={18} /> {t.core.back}
             </Button>
             <Button onClick={handleSubmit} disabled={!formData.lifestyle && !formData.dailySchedule}>
-              分析核心参数 <ChevronRight size={18} />
+              {t.core.analyzeButton} <ChevronRight size={18} />
             </Button>
           </motion.div>
         </div>
@@ -166,10 +166,10 @@ export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
           className="mb-8"
         >
           <h1 className="font-display text-2xl font-bold text-text-primary mb-2">
-            你的核心人生参数
+            {t.core.resultTitle}
           </h1>
           <p className="text-text-secondary">
-            在所有可以改变的参数中，这个是最能撬动全局的那一个
+            {t.core.resultSubtitle}
           </p>
         </motion.div>
 
@@ -187,7 +187,7 @@ export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
                 </div>
                 <div>
                   <span className="text-xs font-medium text-accent-rose uppercase tracking-wider">
-                    Core Parameter
+                    {t.core.coreParameter}
                   </span>
                   <h2 className="font-display text-2xl font-bold text-text-primary">
                     {coreParam.name}
@@ -200,7 +200,7 @@ export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
               </p>
 
               <p className="text-text-secondary leading-relaxed bg-bg-tertiary p-4 rounded-lg">
-                <span className="text-accent-cyan font-medium">为什么是这个？</span>
+                <span className="text-accent-cyan font-medium">{t.core.whyThis}</span>
                 <br />
                 {coreParam.reasoning}
               </p>
@@ -215,7 +215,7 @@ export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
               <div className="flex items-center gap-2 mb-4">
                 <Zap className="text-accent-amber" size={20} />
                 <h3 className="font-display font-semibold text-text-primary">
-                  影响链
+                  {t.core.impactChain}
                 </h3>
               </div>
 
@@ -246,7 +246,7 @@ export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
               className="bg-bg-secondary rounded-card border border-border p-6 mb-6"
             >
               <h3 className="font-display font-semibold text-text-primary mb-4">
-                改善效果预估
+                {t.core.improvementTitle}
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {coreParam.affectedMetrics.map((m, i) => (
@@ -271,10 +271,10 @@ export function CoreParameterPage({ onNext, onBack }: CoreParameterPageProps) {
               className="flex justify-between items-center"
             >
               <Button variant="ghost" onClick={() => setStep('input')}>
-                <ChevronLeft size={18} /> 重新描述
+                <ChevronLeft size={18} /> {t.core.reinput}
               </Button>
               <Button onClick={onNext}>
-                查看微行动方案 <ChevronRight size={18} />
+                {t.micro.title} <ChevronRight size={18} />
               </Button>
             </motion.div>
           </>

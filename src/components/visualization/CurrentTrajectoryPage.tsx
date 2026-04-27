@@ -2,7 +2,8 @@ import { useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useApp } from '../../context/AppContext'
-import { generateTrajectory, calculateBaseScores } from '../../utils/trajectory'
+import { useI18n } from '../../i18n'
+import { generateTrajectory, calculateBaseScores, getMetricLabel, getMetricColor } from '../../utils/trajectory'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { ChevronRight, AlertTriangle, TrendingDown, Activity, Wallet, Users, Brain } from 'lucide-react'
@@ -15,19 +16,18 @@ interface CurrentTrajectoryPageProps {
 export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageProps) {
   const { state, dispatch } = useApp()
   const { dailyRoutine } = state.userProfile
+  const { t, lang } = useI18n()
 
   const baseScores = useMemo(() => calculateBaseScores(dailyRoutine), [dailyRoutine])
-
-  const trajectory = useMemo(() => generateTrajectory(dailyRoutine, 36, 0.95), [dailyRoutine])
+  const trajectory = useMemo(() => generateTrajectory(dailyRoutine, 36, 0.95, lang), [dailyRoutine, lang])
 
   const chartData = trajectory.filter((_, i) => i % 3 === 0)
-
   const finalScores = trajectory[trajectory.length - 1]
 
   const metrics = [
     {
       key: 'health',
-      label: '健康',
+      label: t.trajectory.metrics.health,
       icon: Activity,
       color: '#FB7185',
       initial: Math.round(baseScores.health),
@@ -36,7 +36,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
     },
     {
       key: 'finance',
-      label: '财务',
+      label: t.trajectory.metrics.finance,
       icon: Wallet,
       color: '#FBBF24',
       initial: Math.round(baseScores.finance),
@@ -45,7 +45,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
     },
     {
       key: 'relationships',
-      label: '关系',
+      label: t.trajectory.metrics.relationships,
       icon: Users,
       color: '#A78BFA',
       initial: Math.round(baseScores.relationships),
@@ -54,7 +54,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
     },
     {
       key: 'growth',
-      label: '成长',
+      label: t.trajectory.metrics.growth,
       icon: Brain,
       color: '#22D3EE',
       initial: Math.round(baseScores.growth),
@@ -95,10 +95,10 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
           className="mb-8"
         >
           <h1 className="font-display text-2xl font-bold text-text-primary mb-2">
-            如果什么都不变...
+            {t.trajectory.title}
           </h1>
           <p className="text-text-secondary">
-            以下是基于你当前日常状态的3年轨迹推演。我们不会美化数据。
+            {t.trajectory.subtitle}
           </p>
         </motion.div>
 
@@ -111,11 +111,9 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
           <div className="flex items-start gap-3">
             <AlertTriangle className="text-accent-rose flex-shrink-0 mt-0.5" size={20} />
             <div>
-              <h3 className="font-medium text-accent-rose mb-1">现实检验</h3>
-              <p className="text-sm text-text-secondary leading-relaxed">
-                这不是预测，而是基于你当前习惯的概率推演。
-                如果你继续保持现在的所有习惯，3年后的轨迹大概率会是这样。
-                <span className="text-accent-rose">这不是命运，但它是惯性。</span>
+              <h3 className="font-medium text-accent-rose mb-1">{t.trajectory.realityCheck}</h3>
+              <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line">
+                {t.trajectory.realityCheckText}
               </p>
             </div>
           </div>
@@ -151,7 +149,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
                   <span className="text-text-muted text-sm">/100</span>
                 </div>
                 <div className="mt-2 flex items-center gap-2 text-xs">
-                  <span className="text-text-muted">现在: {metric.initial}</span>
+                  <span className="text-text-muted">: {metric.initial}</span>
                   <span className="text-accent-rose">
                     {metric.final - metric.initial < 0 ? '↓' : ''}{metric.final - metric.initial}
                   </span>
@@ -168,7 +166,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
           className="bg-bg-secondary rounded-card border border-border p-6 mb-6"
         >
           <h2 className="font-display font-semibold text-text-primary mb-4">
-            3年综合轨迹
+            {t.trajectory.chartTitle}
           </h2>
 
           <div className="h-64">
@@ -176,7 +174,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
               <LineChart data={chartData}>
                 <XAxis
                   dataKey="month"
-                  tickFormatter={(v) => `${v}月`}
+                  tickFormatter={(v) => `${v}${lang === 'zh' ? '月' : 'mo'}`}
                   stroke="#6B7280"
                   fontSize={12}
                   tickLine={false}
@@ -195,7 +193,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
                     borderRadius: '12px',
                     fontSize: '12px'
                   }}
-                  labelFormatter={(v) => `第 ${v} 个月`}
+                  labelFormatter={(v) => ` ${lang === 'zh' ? '第' : ''}${v}${lang === 'zh' ? '个月' : ' months'}`}
                 />
                 <Legend
                   wrapperStyle={{ fontSize: '12px' }}
@@ -206,7 +204,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
                   stroke="#FB7185"
                   strokeWidth={2}
                   dot={false}
-                  name="健康"
+                  name={t.trajectory.metrics.health}
                 />
                 <Line
                   type="monotone"
@@ -214,7 +212,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
                   stroke="#FBBF24"
                   strokeWidth={2}
                   dot={false}
-                  name="财务"
+                  name={t.trajectory.metrics.finance}
                 />
                 <Line
                   type="monotone"
@@ -222,7 +220,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
                   stroke="#A78BFA"
                   strokeWidth={2}
                   dot={false}
-                  name="关系"
+                  name={t.trajectory.metrics.relationships}
                 />
                 <Line
                   type="monotone"
@@ -230,7 +228,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
                   stroke="#22D3EE"
                   strokeWidth={2}
                   dot={false}
-                  name="成长"
+                  name={t.trajectory.metrics.growth}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -245,7 +243,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
             className="bg-bg-secondary rounded-card border border-border p-6 mb-6"
           >
             <h2 className="font-display font-semibold text-text-primary mb-4">
-              关键转折点
+              {t.trajectory.milestones}
             </h2>
             <div className="space-y-3">
               {trajectory.filter(t => t.milestone).map((point) => (
@@ -255,7 +253,7 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
                 >
                   <div className="w-16 text-center">
                     <span className="font-mono text-accent-amber text-sm">
-                      第{point.month}月
+                      {lang === 'zh' ? '第' : ''}{point.month}{lang === 'zh' ? '月' : ' mo'}
                     </span>
                   </div>
                   <div className="flex-1">
@@ -276,10 +274,10 @@ export function CurrentTrajectoryPage({ onNext, onBack }: CurrentTrajectoryPageP
           className="flex justify-between items-center"
         >
           <Button variant="ghost" onClick={onBack}>
-            上一步
+            {t.trajectory.back}
           </Button>
           <Button onClick={onNext}>
-            下一步：设定目标 <ChevronRight size={18} />
+            {t.trajectory.next} <ChevronRight size={18} />
           </Button>
         </motion.div>
       </div>

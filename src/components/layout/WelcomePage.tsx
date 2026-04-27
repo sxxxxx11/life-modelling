@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useI18n } from '../../i18n'
 import { Button } from '../ui/Button'
 
 interface WelcomePageProps {
@@ -6,6 +7,8 @@ interface WelcomePageProps {
 }
 
 export function WelcomePage({ onStart }: WelcomePageProps) {
+  const { t } = useI18n()
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
       <motion.div
@@ -20,12 +23,12 @@ export function WelcomePage({ onStart }: WelcomePageProps) {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="mb-8"
         >
-          <div className="text-6xl mb-4">⚡</div>
+          <div className="text-6xl mb-4">◇</div>
           <h1 className="font-display text-5xl md:text-6xl font-bold text-text-primary mb-4">
             LifeForge
           </h1>
           <p className="font-hand text-2xl text-accent-cyan">
-            人生建模 · 轨迹推演 · 改写参数
+            {t.welcome.subtitle}
           </p>
         </motion.div>
 
@@ -33,12 +36,9 @@ export function WelcomePage({ onStart }: WelcomePageProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="text-lg text-text-secondary mb-8 leading-relaxed"
+          className="text-lg text-text-secondary mb-8 leading-relaxed whitespace-pre-line"
         >
-          这不是一份人生规划指南，也不是一碗鸡汤。
-          <br />
-          它是一个基于统计学的人生模拟器——
-          <span className="text-accent-rose">用冷峻的数据告诉你真相</span>。
+          {t.welcome.description}
         </motion.p>
 
         <motion.div
@@ -48,9 +48,9 @@ export function WelcomePage({ onStart }: WelcomePageProps) {
           className="grid md:grid-cols-3 gap-4 mb-10"
         >
           {[
-            { num: '01', title: '看清现状', desc: '不做任何改变，3年后你会是什么样子' },
-            { num: '02', title: '找到核心', desc: '对比理想与现实，识别最关键的1个参数' },
-            { num: '03', title: '微行动', desc: '每天一个轻松到不可能失败的动作' }
+            { num: '01', title: t.welcome.step1Title, desc: t.welcome.step1Desc },
+            { num: '02', title: t.welcome.step2Title, desc: t.welcome.step2Desc },
+            { num: '03', title: t.welcome.step3Title, desc: t.welcome.step3Desc }
           ].map((item, i) => (
             <motion.div
               key={item.num}
@@ -72,7 +72,7 @@ export function WelcomePage({ onStart }: WelcomePageProps) {
           transition={{ delay: 1.1 }}
         >
           <Button size="lg" onClick={onStart}>
-            开始人生建模 →
+            {t.welcome.startButton}
           </Button>
         </motion.div>
 
@@ -82,7 +82,7 @@ export function WelcomePage({ onStart }: WelcomePageProps) {
           transition={{ delay: 1.3 }}
           className="mt-8 text-sm text-text-muted"
         >
-          预计耗时：15-20分钟 · 所有数据仅保存在本地
+          {t.welcome.timeEstimate}
         </motion.p>
       </motion.div>
 
@@ -92,11 +92,9 @@ export function WelcomePage({ onStart }: WelcomePageProps) {
         transition={{ delay: 1.5 }}
         className="absolute bottom-8 text-center"
       >
-        <p className="text-xs text-text-muted mb-2">为什么要做这个？</p>
-        <p className="text-sm text-text-secondary max-w-md">
-          "大多数人的失败，不是因为不知道目标在哪里，
-          <br />
-          而是因为没有看清脚下每一步正在把他们带向何方。"
+        <p className="text-xs text-text-muted mb-2">{t.welcome.whyTitle}</p>
+        <p className="text-sm text-text-secondary max-w-md whitespace-pre-line">
+          {t.welcome.whyQuote}
         </p>
       </motion.div>
     </div>

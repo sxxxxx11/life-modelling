@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApp } from '../../context/AppContext'
-import { generateProbes, getPendingProbes } from '../../data/probes'
-import { ProbeQuestion } from '../../data/probes'
+import { useI18n } from '../../i18n'
+import { generateProbes, getPendingProbes, ProbeQuestion } from '../../data/probes'
 import { Button } from '../ui/Button'
 import { Textarea } from '../ui/Input'
 import { ChevronRight, ChevronLeft, MessageCircle, Check, SkipForward } from 'lucide-react'
@@ -12,15 +12,26 @@ interface ProbesPageProps {
   onBack: () => void
 }
 
+const categoryLabels: Record<string, string> = {
+  sleep: '睡眠',
+  diet: '饮食',
+  exercise: '运动',
+  commute: '通勤',
+  work: '工作',
+  leisure: '休闲',
+  health: '健康'
+}
+
 export function ProbesPage({ onNext, onBack }: ProbesPageProps) {
   const { state, dispatch } = useApp()
   const { dailyRoutine, probeAnswers } = state.userProfile
+  const { t } = useI18n()
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answer, setAnswer] = useState('')
   const [skippedIds, setSkippedIds] = useState<string[]>([])
 
-  const probes = useMemo(() => generateProbes(dailyRoutine), [dailyRoutine])
+  const probes = useMemo(() => generateProbes(dailyRoutine, lang), [dailyRoutine, lang])
   const completedIds = useMemo(() => probeAnswers.map(a => a.questionId), [probeAnswers])
   const pendingProbes = useMemo(() =>
     probes.filter(p => !completedIds.includes(p.id) && !skippedIds.includes(p.id)),
@@ -60,6 +71,10 @@ export function ProbesPage({ onNext, onBack }: ProbesPageProps) {
     }
   }
 
+  const getCategoryLabel = (category: string): string => {
+    return t.probes.categories[category as keyof typeof t.probes.categories] || categoryLabels[category] || category
+  }
+
   if (pendingProbes.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6">
@@ -70,13 +85,13 @@ export function ProbesPage({ onNext, onBack }: ProbesPageProps) {
         >
           <div className="text-5xl mb-4">✨</div>
           <h2 className="font-display text-2xl font-bold text-text-primary mb-2">
-            探针完成
+            {t.probes.completed}
           </h2>
           <p className="text-text-secondary mb-6">
-            基于你的回答，我们已经建立了足够完整的人生日程模型
+            {t.probes.completedDesc}
           </p>
           <Button onClick={onNext}>
-            查看你的3年轨迹 →
+            {t.probes.viewTrajectory}
           </Button>
         </motion.div>
       </div>
@@ -97,16 +112,16 @@ export function ProbesPage({ onNext, onBack }: ProbesPageProps) {
             </div>
             <div>
               <h1 className="font-display text-2xl font-bold text-text-primary">
-                深度探针
+                {t.probes.title}
               </h1>
               <p className="text-sm text-text-muted">
-                基于你的日常，我们想深入了解一些细节
+                {t.probes.subtitle}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-text-secondary">回答进度</span>
+            <span className="text-text-secondary">{t.probes.progress}</span>
             <div className="flex-1 h-2 bg-bg-tertiary rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-accent-cyan"
@@ -131,12 +146,7 @@ export function ProbesPage({ onNext, onBack }: ProbesPageProps) {
           >
             <div className="mb-2">
               <span className="text-xs font-medium text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded">
-                {currentProbe.category === 'sleep' ? '睡眠' :
-                 currentProbe.category === 'diet' ? '饮食' :
-                 currentProbe.category === 'exercise' ? '运动' :
-                 currentProbe.category === 'commute' ? '通勤' :
-                 currentProbe.category === 'work' ? '工作' :
-                 currentProbe.category === 'leisure' ? '休闲' : '健康'}
+                {getCategoryLabel(currentProbe.category)}
               </span>
             </div>
 
@@ -147,7 +157,7 @@ export function ProbesPage({ onNext, onBack }: ProbesPageProps) {
             <Textarea
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
-              placeholder="写下你的回答..."
+              placeholder={t.probes.placeholder}
               rows={4}
               className="mb-4"
             />
@@ -158,10 +168,10 @@ export function ProbesPage({ onNext, onBack }: ProbesPageProps) {
                 disabled={!answer.trim()}
                 className="flex-1"
               >
-                <Check size={18} /> 提交
+                <Check size={18} /> {t.probes.submit}
               </Button>
               <Button variant="ghost" onClick={handleSkip}>
-                <SkipForward size={18} /> 跳过
+                <SkipForward size={18} /> {t.probes.skip}
               </Button>
             </div>
           </motion.div>
@@ -174,15 +184,15 @@ export function ProbesPage({ onNext, onBack }: ProbesPageProps) {
           className="flex justify-between items-center"
         >
           <Button variant="ghost" onClick={onBack}>
-            <ChevronLeft size={18} /> 返回
+            <ChevronLeft size={18} /> {t.probes.back}
           </Button>
 
           <div className="text-sm text-text-muted">
-            探针 {currentIndex + 1} / {pendingProbes.length}
+            {t.probes.title} {currentIndex + 1} / {pendingProbes.length}
           </div>
 
           <Button variant="secondary" onClick={onNext}>
-            跳过全部 <ChevronRight size={18} />
+            {t.probes.skipAll} <ChevronRight size={18} />
           </Button>
         </motion.div>
 
@@ -194,7 +204,7 @@ export function ProbesPage({ onNext, onBack }: ProbesPageProps) {
             className="mt-8"
           >
             <h3 className="text-sm font-medium text-text-secondary mb-3">
-              已回答的探针
+              {t.probes.answeredProbes}
             </h3>
             <div className="space-y-2">
               {probeAnswers.slice(-3).reverse().map(ans => {

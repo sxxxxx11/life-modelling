@@ -2,30 +2,32 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Moon, Utensils, Dumbbell, Car, Briefcase, Smile, Heart, ChevronRight } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
+import { useI18n } from '../../i18n'
 import { ModuleCard } from '../ui/Card'
 import { Input, Textarea, Select } from '../ui/Input'
 import { Slider } from '../ui/Slider'
 import { Button } from '../ui/Button'
+import { formatTemplate } from '../../i18n'
 
 interface DailyInputPageProps {
   onNext: () => void
 }
 
-const modules = [
-  { key: 'sleep', icon: Moon, label: '睡眠' },
-  { key: 'diet', icon: Utensils, label: '饮食' },
-  { key: 'exercise', icon: Dumbbell, label: '运动' },
-  { key: 'commute', icon: Car, label: '通勤' },
-  { key: 'work', icon: Briefcase, label: '工作' },
-  { key: 'leisure', icon: Smile, label: '休闲' },
-  { key: 'health', icon: Heart, label: '健康' }
-]
-
 export function DailyInputPage({ onNext }: DailyInputPageProps) {
   const { state, dispatch } = useApp()
   const { dailyRoutine } = state.userProfile
+  const { t } = useI18n()
   const [expandedModule, setExpandedModule] = useState<string | null>('sleep')
-  const [completedCount, setCompletedCount] = useState(0)
+
+  const modules = [
+    { key: 'sleep', icon: Moon, label: t.daily.modules.sleep },
+    { key: 'diet', icon: Utensils, label: t.daily.modules.diet },
+    { key: 'exercise', icon: Dumbbell, label: t.daily.modules.exercise },
+    { key: 'commute', icon: Car, label: t.daily.modules.commute },
+    { key: 'work', icon: Briefcase, label: t.daily.modules.work },
+    { key: 'leisure', icon: Smile, label: t.daily.modules.leisure },
+    { key: 'health', icon: Heart, label: t.daily.modules.health }
+  ]
 
   const updateRoutine = <K extends keyof typeof dailyRoutine>(
     section: K,
@@ -71,27 +73,27 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
           <div className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="睡觉时间"
+                label={t.daily.sleep.bedtime}
                 type="time"
                 value={dailyRoutine.sleep.bedtime}
                 onChange={(e) => updateRoutine('sleep', 'bedtime', e.target.value)}
               />
               <Input
-                label="起床时间"
+                label={t.daily.sleep.wakeTime}
                 type="time"
                 value={dailyRoutine.sleep.wakeTime}
                 onChange={(e) => updateRoutine('sleep', 'wakeTime', e.target.value)}
               />
             </div>
             <Slider
-              label="睡眠质量 (1-5)"
+              label={t.daily.sleep.quality}
               min={1}
               max={5}
               value={dailyRoutine.sleep.quality}
               onChange={(e) => updateRoutine('sleep', 'quality', Number(e.target.value))}
             />
             <Input
-              label="夜间醒来次数"
+              label={t.daily.sleep.nightWakeups}
               type="number"
               min={0}
               max={10}
@@ -99,13 +101,13 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
               onChange={(e) => updateRoutine('sleep', 'nightWakeups', Number(e.target.value))}
             />
             <Select
-              label="午睡习惯"
+              label={t.daily.sleep.napHabit}
               value={dailyRoutine.sleep.napHabit}
               onChange={(e) => updateRoutine('sleep', 'napHabit', e.target.value)}
               options={[
-                { value: 'always', label: '每天午睡' },
-                { value: 'sometimes', label: '偶尔午睡' },
-                { value: 'never', label: '从不午睡' }
+                { value: 'always', label: t.daily.sleep.napAlways },
+                { value: 'sometimes', label: t.daily.sleep.napSometimes },
+                { value: 'never', label: t.daily.sleep.napNever }
               ]}
             />
           </div>
@@ -115,24 +117,24 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
         return (
           <div className="space-y-5">
             <Select
-              label="早餐习惯"
+              label={t.daily.diet.breakfast}
               value={dailyRoutine.diet.breakfast}
               onChange={(e) => updateRoutine('diet', 'breakfast', e.target.value)}
               options={[
-                { value: 'always', label: '每天吃' },
-                { value: 'sometimes', label: '偶尔吃' },
-                { value: 'never', label: '几乎不吃' }
+                { value: 'always', label: t.daily.diet.breakfastAlways },
+                { value: 'sometimes', label: t.daily.diet.breakfastSometimes },
+                { value: 'never', label: t.daily.diet.breakfastNever }
               ]}
             />
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="午餐时间"
+                label={t.daily.diet.lunchTime}
                 type="time"
                 value={dailyRoutine.diet.lunchTime}
                 onChange={(e) => updateRoutine('diet', 'lunchTime', e.target.value)}
               />
               <Input
-                label="晚餐时间"
+                label={t.daily.diet.dinnerTime}
                 type="time"
                 value={dailyRoutine.diet.dinnerTime}
                 onChange={(e) => updateRoutine('diet', 'dinnerTime', e.target.value)}
@@ -147,12 +149,12 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
                 className="w-4 h-4 rounded border-border bg-bg-tertiary text-accent-cyan focus:ring-accent-cyan"
               />
               <label htmlFor="dinnerRegular" className="text-sm text-text-secondary">
-                晚餐时间相对规律
+                {t.daily.diet.dinnerRegular}
               </label>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="每天零食次数"
+                label={t.daily.diet.snacksPerDay}
                 type="number"
                 min={0}
                 max={10}
@@ -160,7 +162,7 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
                 onChange={(e) => updateRoutine('diet', 'snacksPerDay', Number(e.target.value))}
               />
               <Input
-                label="每天喝水量 (杯)"
+                label={t.daily.diet.waterCups}
                 type="number"
                 min={0}
                 max={20}
@@ -176,7 +178,7 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
           <div className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="每周运动次数"
+                label={t.daily.exercise.timesPerWeek}
                 type="number"
                 min={0}
                 max={14}
@@ -184,7 +186,7 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
                 onChange={(e) => updateRoutine('exercise', 'timesPerWeek', Number(e.target.value))}
               />
               <Input
-                label="每次运动时长 (分钟)"
+                label={t.daily.exercise.duration}
                 type="number"
                 min={0}
                 max={300}
@@ -193,20 +195,20 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
               />
             </div>
             <Input
-              label="主要运动类型"
-              placeholder="如：跑步、游泳、瑜伽..."
+              label={t.daily.exercise.type}
+              placeholder={t.daily.exercise.typePlaceholder}
               value={dailyRoutine.exercise.type}
               onChange={(e) => updateRoutine('exercise', 'type', e.target.value)}
             />
             <Slider
-              label="每天久坐时长 (小时)"
+              label={t.daily.exercise.sedentaryHours}
               min={2}
               max={14}
               value={dailyRoutine.exercise.sedentaryHours}
               onChange={(e) => updateRoutine('exercise', 'sedentaryHours', Number(e.target.value))}
             />
             <Input
-              label="每天平均步数"
+              label={t.daily.exercise.avgSteps}
               type="number"
               min={0}
               max={50000}
@@ -220,21 +222,21 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
         return (
           <div className="space-y-5">
             <Select
-              label="主要通勤方式"
+              label={t.daily.commute.method}
               value={dailyRoutine.commute.method}
               onChange={(e) => updateRoutine('commute', 'method', e.target.value)}
               options={[
-                { value: '', label: '选择通勤方式' },
-                { value: 'drive', label: '开车' },
-                { value: 'transit', label: '公共交通' },
-                { value: 'bike', label: '骑车' },
-                { value: 'walk', label: '步行' },
-                { value: 'wfh', label: '居家办公' },
-                { value: 'other', label: '其他' }
+                { value: '', label: t.daily.commute.methodPlaceholder },
+                { value: 'drive', label: t.daily.commute.drive },
+                { value: 'transit', label: t.daily.commute.transit },
+                { value: 'bike', label: t.daily.commute.bike },
+                { value: 'walk', label: t.daily.commute.walk },
+                { value: 'wfh', label: t.daily.commute.wfh },
+                { value: 'other', label: t.daily.commute.other }
               ]}
             />
             <Input
-              label="单程通勤时间 (分钟)"
+              label={t.daily.commute.duration}
               type="number"
               min={0}
               max={180}
@@ -242,8 +244,8 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
               onChange={(e) => updateRoutine('commute', 'duration', Number(e.target.value))}
             />
             <Textarea
-              label="通勤时通常做什么"
-              placeholder="如：刷手机、听播客、看视频..."
+              label={t.daily.commute.activity}
+              placeholder={t.daily.commute.activityPlaceholder}
               rows={2}
               value={dailyRoutine.commute.activity}
               onChange={(e) => updateRoutine('commute', 'activity', e.target.value)}
@@ -255,30 +257,30 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
         return (
           <div className="space-y-5">
             <Input
-              label="工作类型"
-              placeholder="如：程序员、销售、教师..."
+              label={t.daily.work.type}
+              placeholder={t.daily.work.typePlaceholder}
               value={dailyRoutine.work.type}
               onChange={(e) => updateRoutine('work', 'type', e.target.value)}
             />
             <Slider
-              label="每天专注工作时长 (小时)"
+              label={t.daily.work.focusHours}
               min={1}
               max={12}
               value={dailyRoutine.work.focusHours}
               onChange={(e) => updateRoutine('work', 'focusHours', Number(e.target.value))}
             />
             <Select
-              label="加班频率"
+              label={t.daily.work.overtimeFreq}
               value={dailyRoutine.work.overtimeFreq}
               onChange={(e) => updateRoutine('work', 'overtimeFreq', e.target.value)}
               options={[
-                { value: 'never', label: '几乎不加班' },
-                { value: 'sometimes', label: '偶尔加班' },
-                { value: 'often', label: '经常加班' }
+                { value: 'never', label: t.daily.work.overtimeNever },
+                { value: 'sometimes', label: t.daily.work.overtimeSometimes },
+                { value: 'often', label: t.daily.work.overtimeOften }
               ]}
             />
             <Slider
-              label="每天学习/成长时间 (分钟)"
+              label={t.daily.work.growthTime}
               min={0}
               max={120}
               step={5}
@@ -292,14 +294,14 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
         return (
           <div className="space-y-5">
             <Slider
-              label="每天屏幕时间 (小时)"
+              label={t.daily.leisure.screenTime}
               min={0}
               max={12}
               value={dailyRoutine.leisure.screenTime}
               onChange={(e) => updateRoutine('leisure', 'screenTime', Number(e.target.value))}
             />
             <Input
-              label="每周社交活动次数"
+              label={t.daily.leisure.socialFreq}
               type="number"
               min={0}
               max={21}
@@ -307,15 +309,15 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
               onChange={(e) => updateRoutine('leisure', 'socialFreq', Number(e.target.value))}
             />
             <Slider
-              label="每天独处时间 (小时)"
+              label={t.daily.leisure.aloneTime}
               min={0}
               max={8}
               value={dailyRoutine.leisure.aloneTime}
               onChange={(e) => updateRoutine('leisure', 'aloneTime', Number(e.target.value))}
             />
             <Textarea
-              label="兴趣爱好"
-              placeholder="如：读书、摄影、烹饪...（用逗号分隔）"
+              label={t.daily.leisure.hobbies}
+              placeholder={t.daily.leisure.hobbiesPlaceholder}
               rows={2}
               value={dailyRoutine.leisure.hobbies.join('、')}
               onChange={(e) => updateRoutine('leisure', 'hobbies', e.target.value.split('、').filter(Boolean))}
@@ -327,26 +329,26 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
         return (
           <div className="space-y-5">
             <Select
-              label="体检频率"
+              label={t.daily.health.checkupFreq}
               value={dailyRoutine.health.checkupFreq}
               onChange={(e) => updateRoutine('health', 'checkupFreq', e.target.value)}
               options={[
-                { value: 'never', label: '几乎不体检' },
-                { value: 'rarely', label: '偶尔体检' },
-                { value: 'yearly', label: '每年一次' },
-                { value: 'half', label: '半年一次' }
+                { value: 'never', label: t.daily.health.checkupNever },
+                { value: 'rarely', label: t.daily.health.checkupRarely },
+                { value: 'yearly', label: t.daily.health.checkupYearly },
+                { value: 'half', label: t.daily.health.checkupHalf }
               ]}
             />
             <Slider
-              label="当前压力水平 (1-10)"
+              label={t.daily.health.stressLevel}
               min={1}
               max={10}
               value={dailyRoutine.health.stressLevel}
               onChange={(e) => updateRoutine('health', 'stressLevel', Number(e.target.value))}
             />
             <Textarea
-              label="近期身体症状"
-              placeholder="如：失眠、头痛、胃不适...（用逗号分隔，无则填"无"）"
+              label={t.daily.health.symptoms}
+              placeholder={t.daily.health.symptomsPlaceholder}
               rows={2}
               value={dailyRoutine.health.symptoms.join('、')}
               onChange={(e) => updateRoutine('health', 'symptoms', e.target.value.split('、').filter(Boolean))}
@@ -368,10 +370,10 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
           className="mb-8"
         >
           <h1 className="font-display text-2xl font-bold text-text-primary mb-2">
-            你的日常是什么样子的？
+            {t.daily.title}
           </h1>
           <p className="text-text-secondary">
-            请如实填写你目前的日常状态。越真实，推演越准确。
+            {t.daily.subtitle}
           </p>
         </motion.div>
 
@@ -403,10 +405,10 @@ export function DailyInputPage({ onNext }: DailyInputPageProps) {
           className="flex justify-between items-center"
         >
           <p className="text-sm text-text-muted">
-            {modules.filter(m => isModuleComplete(m.key)).length} / {modules.length} 模块已填写
+            {formatTemplate(t.daily.progress, { completed: modules.filter(m => isModuleComplete(m.key)).length, total: modules.length })}
           </p>
           <Button onClick={onNext}>
-            继续 <ChevronRight size={18} />
+            {t.daily.continue} <ChevronRight size={18} />
           </Button>
         </motion.div>
       </div>

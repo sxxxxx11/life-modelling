@@ -7,7 +7,7 @@ function parseTime(time: string): number {
 
 function calculateSleepScore(routine: DailyRoutine): number {
   const bedtimeMinutes = parseTime(routine.sleep.bedtime)
-  const wakeTimeMinutes = parseTime(routine.wakeTime)
+  const wakeTimeMinutes = parseTime(routine.sleep.wakeTime)
 
   let sleepDuration = wakeTimeMinutes - bedtimeMinutes
   if (sleepDuration < 0) sleepDuration += 24 * 60
@@ -126,20 +126,39 @@ export function calculateBaseScores(routine: DailyRoutine): {
   }
 }
 
-function getMilestone(month: number, health: number, finance: number, growth: number): string | undefined {
-  if (month === 6 && health < 40) return '体检指标异常'
-  if (month === 12 && finance < 35) return '财务状况紧张'
-  if (month === 18 && growth < 30) return '职业发展停滞'
-  if (month === 24 && health < 35) return '慢性疲劳综合征'
-  if (month === 30 && relationships < 30) return '人际关系疏离'
-  if (month === 36 && overall < 40) return '生活质量明显下降'
+const milestonesEn = [
+  { month: 6, condition: (h: number) => h < 40, text: 'Abnormal checkup indicators' },
+  { month: 12, condition: (h: number, f: number) => f < 35, text: 'Tight financial situation' },
+  { month: 18, condition: (h: number, f: number, g: number) => g < 30, text: 'Career stagnation' },
+  { month: 24, condition: (h: number) => h < 35, text: 'Chronic fatigue syndrome' },
+  { month: 30, condition: (h: number, f: number, r: number) => r < 30, text: 'Emotional distancing in relationships' },
+  { month: 36, condition: (h: number, f: number, r: number, g: number, o: number) => o < 40, text: 'Significant decline in quality of life' }
+]
+
+const milestonesZh = [
+  { month: 6, condition: (h: number) => h < 40, text: '体检指标异常' },
+  { month: 12, condition: (h: number, f: number) => f < 35, text: '财务状况紧张' },
+  { month: 18, condition: (h: number, f: number, g: number) => g < 30, text: '职业发展停滞' },
+  { month: 24, condition: (h: number) => h < 35, text: '慢性疲劳综合征' },
+  { month: 30, condition: (h: number, f: number, r: number) => r < 30, text: '人际关系疏离' },
+  { month: 36, condition: (h: number, f: number, r: number, g: number, o: number) => o < 40, text: '生活质量明显下降' }
+]
+
+function getMilestone(month: number, health: number, finance: number, relationships: number, growth: number, overall: number, lang: 'zh' | 'en'): string | undefined {
+  const milestones = lang === 'en' ? milestonesEn : milestonesZh
+  for (const m of milestones) {
+    if (m.month === month && m.condition(health, finance, growth, relationships, overall)) {
+      return m.text
+    }
+  }
   return undefined
 }
 
 export function generateTrajectory(
   routine: DailyRoutine,
   months: number = 36,
-  inertiaFactor: number = 0.95
+  inertiaFactor: number = 0.95,
+  lang: 'zh' | 'en' = 'zh'
 ): TrajectoryPoint[] {
   const baseScores = calculateBaseScores(routine)
   const trajectory: TrajectoryPoint[] = []
@@ -149,7 +168,7 @@ export function generateTrajectory(
   for (let month = 0; month <= months; month++) {
     const overall = (current.health * 0.3 + current.finance * 0.3 + current.relationships * 0.2 + current.growth * 0.2)
 
-    const milestone = getMilestone(month, current.health, current.finance, current.growth)
+    const milestone = getMilestone(month, current.health, current.finance, current.relationships, current.growth, overall, lang)
 
     trajectory.push({
       month,
@@ -179,7 +198,8 @@ export function generateImprovedTrajectory(
   routine: DailyRoutine,
   coreParam: string,
   improvement: number,
-  months: number = 36
+  months: number = 36,
+  lang: 'zh' | 'en' = 'zh'
 ): TrajectoryPoint[] {
   const baseScores = calculateBaseScores(routine)
   const trajectory: TrajectoryPoint[] = []
@@ -241,15 +261,15 @@ export function generateImprovedTrajectory(
   return trajectory
 }
 
-export function getMetricLabel(metric: string): string {
-  const labels: Record<string, string> = {
-    health: '健康',
-    finance: '财务',
-    relationships: '关系',
-    growth: '成长',
-    overall: '综合'
+export function getMetricLabel(metric: string, lang: 'zh' | 'en' = 'zh'): string {
+  const labels: Record<string, Record<string, string>> = {
+    health: { zh: '健康', en: 'Health' },
+    finance: { zh: '财务', en: 'Finance' },
+    relationships: { zh: '关系', en: 'Relationships' },
+    growth: { zh: '成长', en: 'Growth' },
+    overall: { zh: '综合', en: 'Overall' }
   }
-  return labels[metric] || metric
+  return labels[metric]?.[lang] || metric
 }
 
 export function getMetricColor(metric: string): string {

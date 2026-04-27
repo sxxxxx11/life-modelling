@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AppProvider, useApp } from './context/AppContext'
+import { useI18n, formatTemplate } from './i18n'
 import { ProgressIndicator } from './components/ui/ProgressIndicator'
 import { WelcomePage } from './components/layout/WelcomePage'
 import { DailyInputPage } from './components/modules/DailyInputPage'
@@ -9,20 +10,22 @@ import { CurrentTrajectoryPage } from './components/visualization/CurrentTraject
 import { CoreParameterPage } from './components/visualization/CoreParameterPage'
 import { MicroActionPage } from './components/visualization/MicroActionPage'
 import { Step } from './types'
-
-const steps = [
-  { key: 'welcome' as Step, label: '开始' },
-  { key: 'daily' as Step, label: '日常' },
-  { key: 'probes' as Step, label: '探针' },
-  { key: 'current' as Step, label: '现状' },
-  { key: 'core' as Step, label: '核心' },
-  { key: 'micro' as Step, label: '行动' }
-]
+import { Globe } from 'lucide-react'
 
 function AppContent() {
   const { state, dispatch } = useApp()
   const { currentStep } = state
+  const { t, lang, toggleLang } = useI18n()
   const [showWelcome, setShowWelcome] = useState(true)
+
+  const steps = [
+    { key: 'welcome' as Step, label: t.steps.welcome },
+    { key: 'daily' as Step, label: t.steps.daily },
+    { key: 'probes' as Step, label: t.steps.probes },
+    { key: 'current' as Step, label: t.steps.current },
+    { key: 'core' as Step, label: t.steps.core },
+    { key: 'micro' as Step, label: t.steps.micro }
+  ]
 
   useEffect(() => {
     if (currentStep !== 'welcome') {
@@ -35,7 +38,7 @@ function AppContent() {
   }
 
   const handleReset = () => {
-    if (window.confirm('确定要重新开始吗？所有数据将被清除。')) {
+    if (window.confirm(t.app.resetConfirm)) {
       dispatch({ type: 'RESET' })
       setShowWelcome(true)
     }
@@ -69,14 +72,23 @@ function AppContent() {
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div className="font-display font-bold text-lg text-text-primary">
-              ⚡ LifeForge
+              ◇ LifeForge
             </div>
-            <button
-              onClick={handleReset}
-              className="text-sm text-text-muted hover:text-text-secondary transition-colors"
-            >
-              重新开始
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleLang}
+                className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-secondary transition-colors"
+              >
+                <Globe size={16} />
+                <span>{lang === 'zh' ? 'EN' : '中文'}</span>
+              </button>
+              <button
+                onClick={handleReset}
+                className="text-sm text-text-muted hover:text-text-secondary transition-colors"
+              >
+                {t.app.reset}
+              </button>
+            </div>
           </div>
           <ProgressIndicator
             steps={steps}
@@ -117,7 +129,7 @@ function AppContent() {
       {currentStep !== 'welcome' && currentStep !== 'micro' && (
         <footer className="border-t border-border px-4 py-4 bg-bg-primary">
           <div className="max-w-3xl mx-auto text-center text-sm text-text-muted">
-            预计还需 {steps.filter(s => steps.findIndex(st => st.key === currentStep) < steps.findIndex(st => st.key === s.key)).length} 步完成
+            {formatTemplate(t.app.stepsRemaining, { count: steps.filter(s => steps.findIndex(st => st.key === currentStep) < steps.findIndex(st => st.key === s.key)).length })}
           </div>
         </footer>
       )}

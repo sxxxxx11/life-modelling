@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, ComposedChart, Area } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, ComposedChart } from 'recharts'
 import { useApp } from '../../context/AppContext'
+import { useI18n } from '../../i18n'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { getConfidenceLevel } from '../../utils/generator'
@@ -16,6 +17,7 @@ interface MicroActionPageProps {
 export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPageProps) {
   const { state } = useApp()
   const { dailyRoutine, results } = state.userProfile
+  const { t, lang } = useI18n()
 
   const { currentTrajectory, coreParameter, microActions, newTrajectory } = results || {
     currentTrajectory: [],
@@ -26,8 +28,8 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
 
   const confidence = useMemo(() => {
     if (!coreParameter) return null
-    return getConfidenceLevel(dailyRoutine, coreParameter.name.includes('睡眠') ? 'sleep' : 'work')
-  }, [dailyRoutine, coreParameter])
+    return getConfidenceLevel(dailyRoutine, coreParameter.name.includes('睡眠') || coreParameter.name.includes('Sleep') ? 'sleep' : 'work', lang)
+  }, [dailyRoutine, coreParameter, lang])
 
   const chartData = useMemo(() => {
     if (!currentTrajectory.length || !newTrajectory.length) return []
@@ -41,7 +43,7 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
   if (!coreParameter || !microActions.length) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-text-muted">正在加载...</p>
+        <p className="text-text-muted">{t.micro.loading}</p>
       </div>
     )
   }
@@ -56,10 +58,10 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
         >
           <div className="text-4xl mb-4">🎯</div>
           <h1 className="font-display text-2xl font-bold text-text-primary mb-2">
-            你的微行动方案
+            {t.micro.title}
           </h1>
           <p className="text-text-secondary max-w-md mx-auto">
-            针对"{coreParameter.name}"，我们为你设计了每天可以轻松执行的动作
+            {t.micro.subtitle.replace('{param}', coreParameter.name)}
           </p>
         </motion.div>
 
@@ -72,10 +74,9 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
           <div className="flex items-start gap-3">
             <Flame className="text-accent-emerald flex-shrink-0 mt-0.5" size={20} />
             <div>
-              <h3 className="font-medium text-accent-emerald mb-1">设计原则</h3>
-              <p className="text-sm text-text-secondary">
-                这些动作极其简单，2分钟内可完成，不依赖意志力，融入现有习惯。
-                目标：让你不可能失败。
+              <h3 className="font-medium text-accent-emerald mb-1">{t.micro.designPrinciple}</h3>
+              <p className="text-sm text-text-secondary whitespace-pre-line">
+                {t.micro.designPrincipleText}
               </p>
             </div>
           </div>
@@ -133,7 +134,7 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
             className="bg-bg-secondary rounded-card border border-border p-6 mb-6"
           >
             <h3 className="font-display font-semibold text-text-primary mb-4">
-              行动自信度评估
+              {t.micro.actionConfidence}
             </h3>
             <div className="flex items-center gap-4 mb-4">
               <div className="flex-1">
@@ -178,12 +179,12 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="text-accent-cyan" size={20} />
             <h3 className="font-display font-semibold text-text-primary">
-              改变后的新轨迹
+              {t.micro.newTrajectory}
             </h3>
           </div>
 
           <p className="text-sm text-text-secondary mb-4">
-            橙色线条为原始轨迹，绿色线条为改变后的新轨迹
+            {t.micro.trajectoryNote}
           </p>
 
           <div className="h-64">
@@ -191,7 +192,7 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
               <ComposedChart data={chartData}>
                 <XAxis
                   dataKey="month"
-                  tickFormatter={(v) => `${v}月`}
+                  tickFormatter={(v) => `${v}${lang === 'zh' ? '月' : 'mo'}`}
                   stroke="#6B7280"
                   fontSize={12}
                   tickLine={false}
@@ -210,7 +211,7 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
                     borderRadius: '12px',
                     fontSize: '12px'
                   }}
-                  labelFormatter={(v) => `第 ${v} 个月`}
+                  labelFormatter={(v) => `${lang === 'zh' ? '第' : ''}${v}${lang === 'zh' ? '个月' : ' months'}`}
                   formatter={(value: number) => [`${value}`, '']}
                 />
                 <Legend
@@ -223,7 +224,7 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   dot={false}
-                  name="原始轨迹"
+                  name={lang === 'zh' ? '原始轨迹' : 'Original'}
                 />
                 <Line
                   type="monotone"
@@ -231,7 +232,7 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
                   stroke="#34D399"
                   strokeWidth={3}
                   dot={false}
-                  name="新轨迹"
+                  name={lang === 'zh' ? '新轨迹' : 'Improved'}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -239,13 +240,13 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
 
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="text-center p-3 bg-bg-tertiary rounded-lg">
-              <p className="text-xs text-text-muted mb-1">3年后原始</p>
+              <p className="text-xs text-text-muted mb-1">{t.micro.currentTrajectory}</p>
               <p className="font-mono text-xl font-bold text-accent-amber">
                 {chartData[chartData.length - 1]?.current || 0}
               </p>
             </div>
             <div className="text-center p-3 bg-bg-tertiary rounded-lg">
-              <p className="text-xs text-text-muted mb-1">3年后新轨迹</p>
+              <p className="text-xs text-text-muted mb-1">{t.micro.newTrajectoryLabel}</p>
               <p className="font-mono text-xl font-bold text-accent-emerald">
                 {chartData[chartData.length - 1]?.improved || 0}
               </p>
@@ -260,14 +261,14 @@ export function MicroActionPage({ onFinish, onBack, onReset }: MicroActionPagePr
           className="flex flex-col gap-3"
         >
           <Button size="lg" onClick={onFinish} className="w-full">
-            开始执行 <ChevronRight size={18} />
+            {t.micro.startExecution} <ChevronRight size={18} />
           </Button>
           <div className="flex gap-3">
             <Button variant="ghost" onClick={onBack} className="flex-1">
-              <ChevronRight size={18} className="rotate-180" /> 上一步
+              <ChevronRight size={18} className="rotate-180" /> {t.micro.back}
             </Button>
             <Button variant="ghost" onClick={onReset} className="flex-1">
-              <RotateCcw size={18} /> 重新开始
+              <RotateCcw size={18} /> {t.micro.restart}
             </Button>
           </div>
         </motion.div>
