@@ -192,8 +192,8 @@
         microCompareDesc: '虚线是原始轨迹（不改变），实线是新轨迹（执行微行动后）',
         microCompareOriginal: '原始轨迹', microCompareNew: '新轨迹',
         microCompareNoChange: '年后（不变）', microCompareWithChange: '年后（改变后）',
-        microStartBtn: '开始执行 ✧',
-        microRestart: '← 上一步', microReset: '🔄 重新开始',
+        microStartBtn: '开始执行',
+        microRestart: '← 上一步', microReset: '重新开始',
         // Reset
         resetConfirm: '确定要重新开始吗？所有数据将被清除。',
         // Footer
@@ -301,8 +301,8 @@
         microCompareDesc: 'Dashed line = original trajectory (no change); solid line = new trajectory (after micro-actions)',
         microCompareOriginal: 'Original trajectory', microCompareNew: 'New trajectory',
         microCompareNoChange: 'yrs later (unchanged)', microCompareWithChange: 'yrs later (with change)',
-        microStartBtn: 'Start Now ✧',
-        microRestart: '← Previous', microReset: '🔄 Start Over',
+        microStartBtn: 'Start Now',
+        microRestart: '← Previous', microReset: 'Start Over',
         // Reset
         resetConfirm: 'Are you sure you want to start over? All data will be cleared.',
         // Footer
@@ -1096,7 +1096,6 @@
         <div class="min-h-screen flex flex-col items-center justify-center px-6 py-12">
           <div class="max-w-2xl text-center animate-fade-in">
             <div class="mb-8">
-              <div class="text-6xl mb-4">◇</div>
               <h1 class="font-english text-5xl md:text-6xl font-bold text-text-primary mb-4 tracking-wide">${t('welcomeTitle')}</h1>
               <p class="font-chinese text-2xl text-accent-pink">${t('welcomeSubtitle')}</p>
             </div>
@@ -1142,7 +1141,7 @@
           `
         },
         {
-          key: 'sleep', icon: '🌙', label: t('sleepLabel'),
+          key: 'sleep', icon: '', label: t('sleepLabel'),
           content: `
             <div class="grid grid-cols-2 gap-4">
               <div>
@@ -1170,7 +1169,7 @@
           `
         },
         {
-          key: 'diet', icon: '🍽️', label: t('dietLabel'),
+          key: 'diet', icon: '', label: t('dietLabel'),
           content: `
             <div>
               <label class="block text-sm font-medium text-text-secondary mb-2">${t('dietBreakfast')}</label>
@@ -1201,7 +1200,7 @@
           `
         },
         {
-          key: 'exercise', icon: '💪', label: t('exerciseLabel'),
+          key: 'exercise', icon: '', label: t('exerciseLabel'),
           content: `
             <div class="grid grid-cols-2 gap-4">
               <div>
@@ -1229,7 +1228,7 @@
           `
         },
         {
-          key: 'work', icon: '💼', label: t('workLabel'),
+          key: 'work', icon: '', label: t('workLabel'),
           content: `
             <div>
               <label class="block text-sm font-medium text-text-secondary mb-2">${t('workType')}</label>
@@ -1260,7 +1259,7 @@
           `
         },
         {
-          key: 'leisure', icon: '😌', label: t('leisureLabel'),
+          key: 'leisure', icon: '', label: t('leisureLabel'),
           content: `
             <div>
               <label class="block text-sm font-medium text-text-secondary mb-2">${t('leisureScreen')}: <span id="screen-time-value" class="text-accent-pink font-english">${routine.leisure.screenTime}</span></label>
@@ -1276,7 +1275,7 @@
           `
         },
         {
-          key: 'health', icon: '❤️', label: t('healthLabel'),
+          key: 'health', icon: '', label: t('healthLabel'),
           content: `
             <div>
               <label class="block text-sm font-medium text-text-secondary mb-2">${t('healthStress')}: <span id="stress-level-value" class="text-accent-pink font-english">${routine.health.stressLevel}</span></label>
@@ -1342,8 +1341,7 @@
       return `
         <div class="min-h-screen flex flex-col items-center justify-center px-6">
           <div class="max-w-xl mx-auto text-center animate-fade-in">
-            <div class="text-5xl mb-4">✧</div>
-            <h2 class="text-2xl font-bold text-text-primary mb-2">${t('probesTitle')}</h2>
+            <h2 class="text-2xl font-bold text-text-primary mb-4">${t('probesTitle')}</h2>
             <p class="text-text-secondary mb-6">${t('probesSubtitle')}</p>
             <button onclick="goToStep('current')" class="bg-accent-pink text-bg-primary px-6 py-3 rounded-btn font-medium hover:bg-accent-pink/90 transition-all">
               ${t('probesBtn')}
@@ -1364,10 +1362,10 @@
       const futureAge = age + years;
 
       const metrics = [
-        { key: 'health', label: t('currentHealth'), icon: '❤️', color: '#FB7185', initial: Math.round(baseScores.health), final: finalScores.health, desc: t('currentHealthDesc') },
-        { key: 'finance', label: t('currentFinance'), icon: '💰', color: '#FBBF24', initial: Math.round(baseScores.finance), final: finalScores.finance, desc: t('currentFinanceDesc') },
-        { key: 'relationships', label: t('currentRelationships'), icon: '👥', color: '#A78BFA', initial: Math.round(baseScores.relationships), final: finalScores.relationships, desc: t('currentRelationshipsDesc') },
-        { key: 'growth', label: t('currentGrowth'), icon: '🧠', color: '#22D3EE', initial: Math.round(baseScores.growth), final: finalScores.growth, desc: t('currentGrowthDesc') }
+        { key: 'health', label: t('currentHealth'), icon: '', color: '#FB7185', initial: Math.round(baseScores.health), final: finalScores.health, desc: t('currentHealthDesc') },
+        { key: 'finance', label: t('currentFinance'), icon: '', color: '#FBBF24', initial: Math.round(baseScores.finance), final: finalScores.finance, desc: t('currentFinanceDesc') },
+        { key: 'relationships', label: t('currentRelationships'), icon: '', color: '#A78BFA', initial: Math.round(baseScores.relationships), final: finalScores.relationships, desc: t('currentRelationshipsDesc') },
+        { key: 'growth', label: t('currentGrowth'), icon: '', color: '#22D3EE', initial: Math.round(baseScores.growth), final: finalScores.growth, desc: t('currentGrowthDesc') }
       ];
 
       const totalNow = Math.round(baseScores.health + baseScores.finance + baseScores.relationships + baseScores.growth);
@@ -1395,14 +1393,9 @@
 
             <div class="bg-bg-tertiary rounded-card border border-border p-4 mb-6 animate-fade-in">
               <p class="text-sm text-text-secondary leading-relaxed">
-                <span class="text-accent-pink font-medium">📊 ${t('currentChartAbout')}</span><br>
+                <span class="text-accent-pink font-medium">${t('currentChartAbout')}</span><br>
                 ${t('currentChartDesc')}
                 <br><br>
-                <span class="text-accent-pink-light">❤️ ${t('currentHealth')}</span> - ${currentLang === 'zh' ? '身体机能、精力水平' : 'Physical function, energy level'}<br>
-                <span class="text-accent-pink-light">💰 ${t('currentFinance')}</span> - ${currentLang === 'zh' ? '收入潜力、职业技能' : 'Income potential, professional skills'}<br>
-                <span class="text-accent-pink-light">👥 ${t('currentRelationships')}</span> - ${currentLang === 'zh' ? '人际网络、情感支持' : 'Social network, emotional support'}<br>
-                <span class="text-accent-pink-light">🧠 ${t('currentGrowth')}</span> - ${currentLang === 'zh' ? '能力提升、竞争力变化' : 'Ability improvement, competitiveness'}<br>
-                <br>
                 <span class="font-english">${years}</span> ${currentLang === 'zh' ? '年后你的综合能量将从' : 'yrs later your total score will change from'} <span class="font-english text-accent-pink">${totalNow}</span> ${currentLang === 'zh' ? '变化到' : 'to'} <span class="font-english text-accent-pink">${totalLater}</span>。
               </p>
             </div>
@@ -1415,7 +1408,7 @@
                       <span>${m.icon}</span>
                       <span class="font-medium text-text-primary">${m.label}</span>
                     </div>
-                    ${m.final < 40 ? '<span class="text-accent-pink">⚠</span>' : ''}
+                    ${m.final < 40 ? '<span class="text-accent-pink">!</span>' : ''}
                   </div>
                   <div class="flex items-baseline gap-2">
                     <span class="font-english text-2xl font-bold text-text-primary">${m.final}</span>
@@ -1610,10 +1603,10 @@
                           <span>→</span><span>${action.trigger}</span>
                         </div>
                         <div class="flex items-center gap-1 text-text-muted">
-                          <span>⏱</span><span class="font-english">${action.duration}</span>
+                          <span class="font-english">${action.duration}</span>
                         </div>
                       </div>
-                      <p class="mt-2 text-sm text-text-secondary bg-bg-tertiary p-2 rounded border-l-2 border-accent-pink/50">💡 ${action.why}</p>
+                      <p class="mt-2 text-sm text-text-secondary bg-bg-tertiary p-2 rounded border-l-2 border-accent-pink/50">${action.why}</p>
                     </div>
                   </div>
                 </div>
@@ -1770,7 +1763,6 @@
             <div class="max-w-3xl mx-auto">
               <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2 font-bold text-lg text-text-primary">
-                  <span class="text-xl">◇</span>
                   <span class="font-english">Life Modelling</span>
                   <span class="text-accent-pink">${t('appSubtitle')}</span>
                 </div>
