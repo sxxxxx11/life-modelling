@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Life Modelling - 人生建模术</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-primary': '#1a1a1e',
+            'bg-secondary': '#222228',
+            'bg-tertiary': '#2a2a30',
+            'text-primary': '#F5F5F5',
+            'text-secondary': '#A8A8B3',
+            'text-muted': '#6B6B75',
+            'accent-pink': '#C9A0A0',
+            'accent-pink-light': '#D4B5B5',
+            'border': '#38383F',
+          },
+          fontFamily: {
+            'display': ['Georgia', 'Noto Serif SC', 'serif'],
+            'body': ['Georgia', 'Noto Serif SC', 'serif'],
+            'mono': ['Georgia', 'monospace'],
+            'chinese': ['Noto Serif SC', 'SimSun', '宋体', 'serif'],
+          },
+          borderRadius: {
+            'card': '16px',
+            'input': '12px',
+            'btn': '8px',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1a1a1e;
+      color: #F5F5F5;
+      font-family: 'Noto Serif SC', 'Georgia', SimSun, serif;
+      min-height: 100vh;
+    }
+    .font-english { font-family: 'Georgia', serif; }
+    .font-chinese { font-family: 'Noto Serif SC', 'SimSun', serif; }
+    ::-moz-selection { background-color: rgba(201, 160, 160, 0.3); }
+    ::selection { background-color: rgba(201, 160, 160, 0.3); }
+    input[type="range"] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #C9A0A0;
+      cursor: pointer;
+      margin-top: -8px;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px;
+      background: linear-gradient(to right, #C9A0A0, #D4B5B5);
+      border-radius: 2px;
+    }
+    input[type="time"], input[type="text"], input[type="number"], textarea, select {
+      font-family: inherit;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // ==================== APP STATE ====================
+    const STORAGE_KEY = 'lifemodelling_state';
+    const LANG_KEY = 'lifemodelling_lang';
+
+    // ==================== I18N ====================
+    let currentLang = localStorage.getItem(LANG_KEY) || 'zh';
+
+    const T = {
+      zh: {
+        // App
+        appTitle: 'Life Modelling',
+        appSubtitle: '改写你的人生底层代码',
+        // Progress steps
+        stepStart: '开始',
+        stepDaily: '日常',
+        stepProbes: '探针',
+        stepCurrent: '现状',
+        stepCore: '核心',
+        stepMicro: '行动',
+        // Welcome
+        welcomeTitle: 'Life Modelling',
+        welcomeSubtitle: '改写你的人生底层代码',
+        welcomeNum01: '01', welcomeNum02: '02', welcomeNum03: '03',
+        welcomeCard1Title: '看清现状', welcomeCard1Desc: '不做任何改变，3年后你会是什么样子',
+        welcomeCard2Title: '找到核心', welcomeCard2Desc: '对比理想与现实，识别最关键的1个人生参数',
+        welcomeCard3Title: '微行动', welcomeCard3Desc: '每天一个轻松到不可能失败的动作',
+        welcomeBtn: '开始人生建模 →',
+        // Daily input
+        dailyTitle: '你的日常是什么样子的？',
+        dailySubtitle: '请如实填写你目前的日常状态。越真实，推演越准确。',
+        dailyModules7: '7个模块已填写',
+        dailyContinue: '继续 →',
+        // Age module
+        ageLabel: '基本信息',
+        ageYourAge: '你的年龄',
+        ageHint: '这个数字会影响轨迹推演的时间范围——年龄越小，我们看的越远。',
+        // Sleep module
+        sleepLabel: '睡眠',
+        sleepBedtime: '睡觉时间', sleepWakeTime: '起床时间',
+        sleepQuality: '睡眠质量 (1-5)', sleepNightWakeups: '夜间醒来次数',
+        // Diet module
+        dietLabel: '饮食',
+        dietBreakfast: '早餐习惯', dietBreakfastAlways: '每天吃', dietBreakfastSometimes: '偶尔吃', dietBreakfastNever: '几乎不吃',
+        dietLunchTime: '午餐时间', dietDinnerTime: '晚餐时间',
+        dietWater: '每天喝水量 (杯)',
+        // Exercise module
+        exerciseLabel: '运动',
+        exerciseFreq: '每周运动次数', exerciseDuration: '每次时长 (分钟)',
+        exerciseType: '主要运动类型', exerciseTypePlaceholder: '如：跑步、游泳、瑜伽...',
+        exerciseSedentary: '每天久坐时长 (小时)',
+        // Work module
+        workLabel: '工作',
+        workType: '工作类型', workTypePlaceholder: '如：程序员、销售、教师...',
+        workFocus: '每天专注工作时长 (小时)',
+        workOvertime: '加班频率', workOvertimeNever: '几乎不加班', workOvertimeSometimes: '偶尔加班', workOvertimeOften: '经常加班',
+        workGrowth: '每天学习/成长时间 (分钟)',
+        // Leisure module
+        leisureLabel: '休闲',
+        leisureScreen: '每天屏幕时间 (小时)',
+        leisureSocial: '每周社交活动次数',
+        // Health module
+        healthLabel: '健康',
+        healthStress: '当前压力水平 (1-10)',
+        healthCheckup: '体检频率', healthCheckupNever: '几乎不体检', healthCheckupRarely: '偶尔体检', healthCheckupYearly: '每年一次', healthCheckupHalf: '半年一次',
+        // Probes
+        probesTitle: '探针完成', probesSubtitle: '基于你的回答，我们已经建立了足够完整的人生日程模型',
+        probesBtn: '查看你的3年轨迹 →',
+        // Current trajectory
+        currentTitle: '如果什么都不变...',
+        currentSubtitle: '以下是基于你当前日常状态的{years}年轨迹推演（届时你将{age}岁）。我们不会美化数据。',
+        currentRealityCheck: '现实检验',
+        currentRealityText: '这不是预测，而是基于你当前习惯的概率推演。如果你继续保持现在的所有习惯，3年后的轨迹大概率会是这样。这不是命运，但它是惯性。',
+        currentChartAbout: '关于图表：',
+        currentChartDesc: '每条线代表一个人生维度的"能量水平"（0-100分）。线条越高，该维度状态越好；向下倾斜意味着持续消耗。',
+        currentHealth: '健康', currentFinance: '财务', currentRelationships: '关系', currentGrowth: '成长',
+        currentHealthDesc: '基于睡眠质量、饮食、运动习惯和压力水平计算。反映身体机能和精力状态。',
+        currentFinanceDesc: '基于工作专注度、成长时间和加班频率计算。反映收入潜力和财务安全感。',
+        currentRelationshipsDesc: '基于休闲质量、社交频率和睡眠质量计算。反映人际关系和情感支持系统。',
+        currentGrowthDesc: '基于工作专注度、学习时间和运动习惯计算。反映能力提升和个人竞争力。',
+        currentNow: '现在',
+        currentTrajectoryTitle: '年综合轨迹',
+        currentTrajectoryDesc: '每条线代表一个人维度的变化趋势。线条越高，该维度状态越好。',
+        currentPrev: '← 上一步',
+        currentNext: '下一步：找到核心参数 →',
+        // Core parameter
+        coreTitle: '核心参数分析',
+        coreSubtitle: '在分析了你的现状后，我们找到了最能撬动你人生的那一个参数。',
+        coreParamLabel: 'Core Parameter',
+        coreWhyThis: '为什么是这个？',
+        coreWhatIs: '这个参数是什么？',
+        coreWhyImportant: '为什么它如此重要？',
+        coreCurrentStatus: '你的现状',
+        coreImpactChain: '改变后的影响链',
+        coreImpactChainDesc: '提升这个参数后，它会如何连锁影响你的人生：',
+        coreEffectEstimate: '改善后的效果预估',
+        coreEffectDesc: '如果你专注于改善这个参数，3年后各维度预计提升：',
+        corePrev: '← 上一步',
+        coreNext: '查看微行动方案 →',
+        // Micro actions
+        microTitle: '你的微行动方案',
+        microSubtitle: '针对"{param}"，我们为你设计了每天可以轻松执行的动作',
+        microDesignPrinciple: '设计原则',
+        microDesignText: '这些动作极其简单，2分钟内可完成，不依赖意志力，融入现有习惯。目标：让你不可能失败。',
+        microAction: '动作', microTrigger: '触发场景', microDuration: '持续时间',
+        // Comparison chart
+        microCompareTitle: '改变后的新轨迹',
+        microCompareDesc: '虚线是原始轨迹（不改变），实线是新轨迹（执行微行动后）',
+        microCompareOriginal: '原始轨迹', microCompareNew: '新轨迹',
+        microCompareNoChange: '年后（不变）', microCompareWithChange: '年后（改变后）',
+        microStartBtn: '开始执行',
+        microRestart: '← 上一步', microReset: '重新开始',
+        // Reset
+        resetConfirm: '确定要重新开始吗？所有数据将被清除。',
+        // Footer
+        footerRestart: '重新开始',
+        // Chart labels
+        chartNow: '现在', chartYear: '年', chartMonth: '月',
+      },
+      en: {
+        // App
+        appTitle: 'Life Modelling',
+        appSubtitle: 'Rewrite the underlying code of your life',
+        // Progress steps
+        stepStart: 'Start',
+        stepDaily: 'Daily',
+        stepProbes: 'Probes',
+        stepCurrent: 'Current',
+        stepCore: 'Core',
+        stepMicro: 'Actions',
+        // Welcome
+        welcomeTitle: 'Life Modelling',
+        welcomeSubtitle: 'Rewrite the underlying code of your life',
+        welcomeNum01: '01', welcomeNum02: '02', welcomeNum03: '03',
+        welcomeCard1Title: 'See Where You Stand', welcomeCard1Desc: 'Without changing anything, what will you look like in 3 years?',
+        welcomeCard2Title: 'Find Your Core', welcomeCard2Desc: 'Compare ideal vs reality — identify the 1 key life parameter',
+        welcomeCard3Title: 'Micro-Actions', welcomeCard3Desc: 'One effortless action per day, impossible to fail',
+        welcomeBtn: 'Start Life Modelling →',
+        // Daily input
+        dailyTitle: 'What does your daily life look like?',
+        dailySubtitle: 'Fill in your current daily state as honestly as possible. The more real, the more accurate the projection.',
+        dailyModules7: '7 modules completed',
+        dailyContinue: 'Continue →',
+        // Age module
+        ageLabel: 'Basic Info',
+        ageYourAge: 'Your age',
+        ageHint: 'This number affects the time range of trajectory projection — the younger you are, the further we look.',
+        // Sleep module
+        sleepLabel: 'Sleep',
+        sleepBedtime: 'Bedtime', sleepWakeTime: 'Wake time',
+        sleepQuality: 'Sleep quality (1-5)', sleepNightWakeups: 'Night wake-ups',
+        // Diet module
+        dietLabel: 'Diet',
+        dietBreakfast: 'Breakfast habit', dietBreakfastAlways: 'Every day', dietBreakfastSometimes: 'Sometimes', dietBreakfastNever: 'Rarely/never',
+        dietLunchTime: 'Lunch time', dietDinnerTime: 'Dinner time',
+        dietWater: 'Daily water intake (cups)',
+        // Exercise module
+        exerciseLabel: 'Exercise',
+        exerciseFreq: 'Exercise frequency per week', exerciseDuration: 'Duration per session (min)',
+        exerciseType: 'Main exercise type', exerciseTypePlaceholder: 'e.g. running, swimming, yoga...',
+        exerciseSedentary: 'Daily sedentary hours',
+        // Work module
+        workLabel: 'Work',
+        workType: 'Work type', workTypePlaceholder: 'e.g. programmer, sales, teacher...',
+        workFocus: 'Daily focused work hours',
+        workOvertime: 'Overtime frequency', workOvertimeNever: 'Rarely', workOvertimeSometimes: 'Sometimes', workOvertimeOften: 'Often',
+        workGrowth: 'Daily learning/growth time (min)',
+        // Leisure module
+        leisureLabel: 'Leisure',
+        leisureScreen: 'Daily screen time (hours)',
+        leisureSocial: 'Weekly social activities',
+        // Health module
+        healthLabel: 'Health',
+        healthStress: 'Current stress level (1-10)',
+        healthCheckup: 'Checkup frequency', healthCheckupNever: 'Rarely/never', healthCheckupRarely: 'Occasionally', healthCheckupYearly: 'Once a year', healthCheckupHalf: 'Twice a year',
+        // Probes
+        probesTitle: 'Probes Complete', probesSubtitle: 'Based on your answers, we\'ve built a complete enough life schedule model for you',
+        probesBtn: 'View Your 3-Year Trajectory →',
+        // Current trajectory
+        currentTitle: 'If nothing changes...',
+        currentSubtitle: 'Based on your current daily habits, here\'s your {years}-year trajectory projection (you\'ll be {age} by then). We don\'t beautify data.',
+        currentRealityCheck: 'Reality Check',
+        currentRealityText: 'This is not a prediction — it\'s a probabilistic projection based on your current habits. If you keep all your current habits, this is likely what your trajectory will look like in 3 years. This isn\'t destiny, but it is inertia.',
+        currentChartAbout: 'About the chart:',
+        currentChartDesc: 'Each line represents a life dimension\'s "energy level" (0-100). Higher lines mean better status in that dimension; downward slopes indicate ongoing depletion.',
+        currentHealth: 'Health', currentFinance: 'Finance', currentRelationships: 'Relationships', currentGrowth: 'Growth',
+        currentHealthDesc: 'Calculated from sleep quality, diet, exercise habits, and stress level. Reflects physical function and energy state.',
+        currentFinanceDesc: 'Calculated from work focus, growth time, and overtime frequency. Reflects income potential and financial security.',
+        currentRelationshipsDesc: 'Calculated from leisure quality, social frequency, and sleep quality. Reflects interpersonal networks and emotional support.',
+        currentGrowthDesc: 'Calculated from work focus, learning time, and exercise habits. Reflects ability improvement and competitiveness.',
+        currentNow: 'Now',
+        currentTrajectoryTitle: '-Year Overall Trajectory',
+        currentTrajectoryDesc: 'Each line represents one life dimension\'s change trend. Higher = better status.',
+        currentPrev: '← Previous', currentNext: 'Next: Find Core Parameter →',
+        // Core parameter
+        coreTitle: 'Core Parameter Analysis',
+        coreSubtitle: 'After analyzing your current state, we found the one parameter that most leveraged your life.',
+        coreParamLabel: 'Core Parameter',
+        coreWhyThis: 'Why this one?',
+        coreWhatIs: 'What is this parameter?',
+        coreWhyImportant: 'Why does it matter so much?',
+        coreCurrentStatus: 'Your current status',
+        coreImpactChain: 'Impact chain after change',
+        coreImpactChainDesc: 'After improving this parameter, how will it chain-react through your life:',
+        coreEffectEstimate: 'Estimated effect after improvement',
+        coreEffectDesc: 'If you focus on improving this parameter, here\'s the projected improvement across dimensions in 3 years:',
+        corePrev: '← Previous',
+        coreNext: 'View Micro-Action Plan →',
+        // Micro actions
+        microTitle: 'Your Micro-Action Plan',
+        microSubtitle: 'For "{param}", we\'ve designed daily actions you can easily execute',
+        microDesignPrinciple: 'Design Principle',
+        microDesignText: 'These actions are extremely simple — completable in under 2 minutes, no willpower needed, embedded in existing habits. Goal: make it impossible for you to fail.',
+        microAction: 'Action', microTrigger: 'Trigger', microDuration: 'Duration',
+        // Comparison chart
+        microCompareTitle: 'New trajectory after change',
+        microCompareDesc: 'Dashed line = original trajectory (no change); solid line = new trajectory (after micro-actions)',
+        microCompareOriginal: 'Original trajectory', microCompareNew: 'New trajectory',
+        microCompareNoChange: 'yrs later (unchanged)', microCompareWithChange: 'yrs later (with change)',
+        microStartBtn: 'Start Now',
+        microRestart: '← Previous', microReset: 'Start Over',
+        // Reset
+        resetConfirm: 'Are you sure you want to start over? All data will be cleared.',
+        // Footer
+        footerRestart: 'Start Over',
+        // Chart labels
+        chartNow: 'Now', chartYear: 'yr', chartMonth: 'mo',
+      }
+    };
+
+    function t(key) {
+      return T[currentLang][key] || key;
+    }
+
+    function toggleLang() {
+      currentLang = currentLang === 'zh' ? 'en' : 'zh';
+      localStorage.setItem(LANG_KEY, currentLang);
+      render();
+    }
+
+    const defaultDailyRoutine = {
+      sleep: { bedtime: '23:30', wakeTime: '07:00', quality: 3, nightWakeups: 0, napHabit: 'sometimes' },
+      diet: { breakfast: 'sometimes', lunchTime: '12:30', dinnerTime: '19:30', dinnerRegular: true, snacksPerDay: 2, waterCups: 5 },
+      exercise: { timesPerWeek: 2, type: '', duration: 30, sedentaryHours: 8, avgSteps: 5000 },
+      commute: { method: '', duration: 30, activity: '' },
+      work: { type: '', focusHours: 4, overtimeFreq: 'sometimes', growthTime: 30 },
+      leisure: { screenTime: 3, socialFreq: 2, aloneTime: 2, hobbies: [] },
+      health: { checkupFreq: 'yearly', symptoms: [], stressLevel: 6 }
+    };
+
+    const defaultDesiredFuture = { city: '', lifestyle: '', relationships: '', financial: '', health: '', dailySchedule: '' };
+
+    let state = {
+      currentStep: 'welcome',
+      userProfile: {
+        age: 25,
+        dailyRoutine: JSON.parse(JSON.stringify(defaultDailyRoutine)),
+        probeAnswers: [],
+        desiredFuture: JSON.parse(JSON.stringify(defaultDesiredFuture)),
+        results: null
+      },
+      completedModules: [],
+      pendingProbes: []
+    };
+
+    function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          state = { ...state, ...parsed };
+        }
+      } catch (e) { console.warn('Failed to load state'); }
+    }
+
+    // ==================== UTILITIES ====================
+    function parseTime(time) {
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function timeDiff(start, end) {
+      let diff = parseTime(end) - parseTime(start);
+      if (diff < 0) diff += 24 * 60;
+      return diff / 60;
+    }
+
+    function calculateBaseScores(routine) {
+      const sleepDuration = timeDiff(routine.sleep.bedtime, routine.sleep.wakeTime);
+      const sleepScore = Math.max(0, Math.min(100, 100 - Math.abs(8 - sleepDuration) * 8 - (5 - routine.sleep.quality) * 10));
+
+      const dietScore = 50 + (routine.diet.breakfast === 'always' ? 20 : routine.diet.breakfast === 'sometimes' ? 10 : 0)
+                        + Math.min(10, routine.diet.waterCups * 2) - Math.min(20, routine.diet.snacksPerDay * 5);
+
+      const exerciseScore = 30 + Math.min(30, routine.exercise.timesPerWeek * 6)
+                             + Math.min(15, routine.exercise.duration / 2) - Math.max(0, (routine.exercise.sedentaryHours - 6) * 3);
+
+      const workScore = 50 + Math.min(25, routine.work.focusHours * 5) + Math.min(15, routine.work.growthTime / 2)
+                         - (routine.work.overtimeFreq === 'often' ? 15 : routine.work.overtimeFreq === 'sometimes' ? 5 : 0);
+
+      const leisureScore = Math.max(0, 80 - routine.leisure.screenTime * 10 + routine.leisure.socialFreq * 5);
+
+      return {
+        health: sleepScore * 0.3 + dietScore * 0.25 + exerciseScore * 0.25 + (70 - routine.health.stressLevel * 5) * 0.2,
+        finance: workScore * 0.7 + sleepScore * 0.15 + (70 - routine.health.stressLevel * 5) * 0.15,
+        relationships: leisureScore * 0.4 + sleepScore * 0.3 + workScore * 0.15 + (70 - routine.health.stressLevel * 5) * 0.15,
+        growth: workScore * 0.4 + sleepScore * 0.2 + leisureScore * 0.2 + exerciseScore * 0.2
+      };
+    }
+
+    function getTrajectoryMonths(age) {
+      // 根据年龄调整轨迹时间范围
+      // 25岁以下：20年轨迹（25岁用户看20年后的自己=45岁）
+      // 25-35岁：15年轨迹
+      // 35-45岁：10年轨迹
+      // 45-55岁：8年轨迹
+      // 55岁以上：5年轨迹
+      if (age < 25) return 240; // 20年
+      if (age < 35) return 180; // 15年
+      if (age < 45) return 120; // 10年
+      if (age < 55) return 96;  // 8年
+      return 60; // 5年
+    }
+
+    function getAgeInertiaFactor(age) {
+      // 年龄调整惯性因子：年龄越大，习惯越难改变
+      if (age < 25) return 0.98;  // 年轻人更容易改变
+      if (age < 35) return 0.97;
+      if (age < 45) return 0.96;
+      if (age < 55) return 0.95;
+      return 0.94; // 年龄越大，惯性越大
+    }
+
+    function generateTrajectory(routine, months = null) {
+      const age = state.userProfile.age || 25;
+      months = months || getTrajectoryMonths(age);
+
+      const baseScores = calculateBaseScores(routine);
+      const lifestyleQuality = (baseScores.overall) / 100; // 0-1，越高说明生活习惯越好
+
+      const trajectory = [];
+      let current = { ...baseScores };
+
+      for (let month = 0; month <= months; month++) {
+        const overall = current.health * 0.3 + current.finance * 0.3 + current.relationships * 0.2 + current.growth * 0.2;
+        trajectory.push({
+          month,
+          health: Math.round(current.health),
+          finance: Math.round(current.finance),
+          relationships: Math.round(current.relationships),
+          growth: Math.round(current.growth),
+          overall: Math.round(overall)
+        });
+
+        // 每月变化：用更真实的模型
+        // 趋势方向取决于：年龄 + 当前生活习惯质量 + 随机波动
+        // 好习惯的人轨迹平稳甚至上升；差习惯的人逐渐下滑
+
+        // 健康：受年龄影响最大，但运动可以减缓下滑
+        const healthTrend = age > 40 ? -0.3 : (age > 25 ? -0.15 : 0.1);
+        const exerciseEffect = routine.exercise.timesPerWeek > 2 ? 0.2 : (routine.exercise.timesPerWeek > 0 ? 0 : -0.2);
+        current.health += healthTrend + exerciseEffect + (Math.random() - 0.5) * 2;
+
+        // 财务：工作+成长时间多，则上升
+        const financeTrend = routine.work.focusHours > 4 ? 0.25 : (routine.work.focusHours > 2 ? 0.1 : -0.1);
+        current.finance += financeTrend + (Math.random() - 0.5) * 1.5;
+
+        // 关系：屏幕时间少则改善
+        const relationTrend = routine.leisure.screenTime < 3 ? 0.15 : (routine.leisure.screenTime > 5 ? -0.2 : 0);
+        current.relationships += relationTrend + (Math.random() - 0.5) * 1.5;
+
+        // 成长：学习时间多则上升，否则停滞
+        const growthTrend = routine.work.growthTime > 60 ? 0.3 : (routine.work.growthTime > 30 ? 0.1 : -0.15);
+        current.growth += growthTrend + (Math.random() - 0.5) * 2;
+
+        // 边界限制
+        current.health = Math.max(15, Math.min(100, current.health));
+        current.finance = Math.max(15, Math.min(100, current.finance));
+        current.relationships = Math.max(15, Math.min(100, current.relationships));
+        current.growth = Math.max(15, Math.min(100, current.growth));
+      }
+      return trajectory;
+    }
+
+    function analyzeCoreParameter(routine, desired) {
+      const baseScores = calculateBaseScores(routine);
+      const sleepDuration = timeDiff(routine.sleep.bedtime, routine.sleep.wakeTime);
+
+      const parameters = [
+        { param: 'sleep', name: currentLang === 'zh' ? '睡眠时间' : 'Sleep', score: Math.max(0, 100 - Math.abs(8 - sleepDuration) * 10 - (5 - routine.sleep.quality) * 10) },
+        { param: 'exercise', name: currentLang === 'zh' ? '运动频率' : 'Exercise', score: Math.min(100, routine.exercise.timesPerWeek * 15 + routine.exercise.duration / 2) },
+        { param: 'work', name: currentLang === 'zh' ? '工作专注度' : 'Work Focus', score: Math.min(100, routine.work.focusHours * 12 + routine.work.growthTime / 2) },
+        { param: 'growth', name: currentLang === 'zh' ? '个人成长时间' : 'Growth Time', score: routine.work.growthTime * 2 + (routine.leisure.hobbies?.length > 0 ? 20 : 0) },
+        { param: 'leisure', name: currentLang === 'zh' ? '休闲质量' : 'Leisure Quality', score: Math.max(0, 80 - routine.leisure.screenTime * 10) }
+      ];
+
+      parameters.sort((a, b) => a.score - b.score);
+      const core = parameters[0];
+
+      const impactChains = {
+        sleep: currentLang === 'zh'
+          ? ['睡眠质量提升', '精力充沛', '专注力增强', '产出提高', '收入增长', '情绪稳定']
+          : ['Better sleep quality', 'More energy', 'Improved focus', 'Higher output', 'Income growth', 'Emotional stability'],
+        exercise: currentLang === 'zh'
+          ? ['体能改善', '精力提升', '睡眠质量提高', '自信增强', '整体幸福感']
+          : ['Better fitness', 'More energy', 'Improved sleep', 'More confidence', 'Overall well-being'],
+        work: currentLang === 'zh'
+          ? ['专业能力提升', '职业竞争力增强', '收入潜力提高', '自我价值感增强']
+          : ['Skill improvement', 'Better career competitiveness', 'Higher income potential', 'Greater self-worth'],
+        growth: currentLang === 'zh'
+          ? ['技能增长', '职业发展', '收入提升', '自我实现']
+          : ['Skill growth', 'Career development', 'Income improvement', 'Self-actualization'],
+        leisure: currentLang === 'zh'
+          ? ['压力缓解', '情绪健康', '人际关系', '生活满意度']
+          : ['Stress relief', 'Emotional health', 'Relationships', 'Life satisfaction']
+      };
+
+      const affectedMetrics = {
+        sleep: [
+          { metric: currentLang === 'zh' ? '健康' : 'Health', improvement: 15 },
+          { metric: currentLang === 'zh' ? '成长' : 'Growth', improvement: 12 },
+          { metric: currentLang === 'zh' ? '关系' : 'Relationships', improvement: 8 }
+        ],
+        exercise: [
+          { metric: currentLang === 'zh' ? '健康' : 'Health', improvement: 20 },
+          { metric: currentLang === 'zh' ? '成长' : 'Growth', improvement: 7 }
+        ],
+        work: [
+          { metric: currentLang === 'zh' ? '财务' : 'Finance', improvement: 18 },
+          { metric: currentLang === 'zh' ? '成长' : 'Growth', improvement: 15 }
+        ],
+        growth: [
+          { metric: currentLang === 'zh' ? '成长' : 'Growth', improvement: 25 },
+          { metric: currentLang === 'zh' ? '财务' : 'Finance', improvement: 12 }
+        ],
+        leisure: [
+          { metric: currentLang === 'zh' ? '关系' : 'Relationships', improvement: 15 },
+          { metric: currentLang === 'zh' ? '健康' : 'Health', improvement: 8 }
+        ]
+      };
+
+      const coreParamExplanations = {
+        sleep: {
+          what: currentLang === 'zh' ? '睡眠是人体修复和恢复的核心机制。睡眠质量直接影响第二天的精力、情绪稳定性和认知功能。' : 'Sleep is the core mechanism for human repair and recovery. Sleep quality directly affects next-day energy, emotional stability, and cognitive function.',
+          whyItMatters: currentLang === 'zh' ? '长期睡眠不足或睡眠质量差，会导致精力持续低迷、情绪波动、专注力下降，进而影响工作产出、人际关系和健康状况。这形成一个负向螺旋。' : 'Long-term poor sleep leads to sustained low energy, emotional swings, and declining focus, which then affects work output, relationships, and health. It creates a negative spiral.',
+          currentIssue: currentLang === 'zh'
+            ? (routine.sleep.quality < 4 ? '你的睡眠质量评分偏低，这正在悄悄侵蚀你的身心能量储备。' : '虽然你可能觉得还能扛住，但睡眠不足的影响是累积的。')
+            : (routine.sleep.quality < 4 ? 'Your sleep quality score is low — it\'s quietly eroding your physical and mental energy reserves.' : 'You might feel like you can handle it, but the effects of sleep deprivation are cumulative.')
+        },
+        exercise: {
+          what: currentLang === 'zh' ? '运动是激活身体机能、提升精力水平的最有效手段。每周运动次数和每次运动时长决定了你的基础体能状态。' : 'Exercise is the most effective way to activate bodily functions and boost energy levels. Weekly frequency and session duration determine your baseline fitness.',
+          whyItMatters: currentLang === 'zh' ? '缺乏运动会导致体能持续衰退、代谢减缓、精力不足，同时增加各类健康风险。运动还能提升情绪和认知功能。' : 'Lack of exercise leads to declining fitness, slower metabolism, and low energy, while increasing health risks. Exercise also boosts mood and cognitive function.',
+          currentIssue: currentLang === 'zh'
+            ? (routine.exercise.timesPerWeek < 3 ? '你目前的运动频率偏低，这正在导致你的基础体能逐渐下滑。' : '你的运动习惯有一定基础，但还有提升空间。')
+            : (routine.exercise.timesPerWeek < 3 ? 'Your exercise frequency is low, causing your baseline fitness to gradually decline.' : 'You have a decent exercise foundation, but there\'s room for improvement.')
+        },
+        work: {
+          what: currentLang === 'zh' ? '工作专注度指的是你在工作时间内真正高效投入的程度。高专注力意味着单位时间内能完成更多高质量的工作。' : 'Work focus refers to how effectively you invest your working hours. High focus means completing more high-quality work per unit of time.',
+          whyItMatters: currentLang === 'zh' ? '专注力直接影响工作产出质量和职业竞争力。在知识经济时代，深度工作能力是稀缺资源。' : 'Focus directly affects work quality and career competitiveness. In the knowledge economy, deep work ability is a scarce resource.',
+          currentIssue: currentLang === 'zh'
+            ? (routine.work.focusHours < 6 ? '你的每日专注工作时长偏短，可能被大量碎片化事务切割。' : '你的专注力有一定水平，但还有提升空间。')
+            : (routine.work.focusHours < 6 ? 'Your daily focused work hours are short — likely fragmented by scattered tasks.' : 'Your focus is decent, but there\'s room to improve.')
+        },
+        growth: {
+          what: currentLang === 'zh' ? '个人成长时间指的是你每天用于学习新知识、新技能的时间。这决定了你未来3年的能力和竞争力变化。' : 'Growth time refers to the daily hours you spend learning new knowledge and skills. This determines how your abilities and competitiveness will change over the next 3 years.',
+          whyItMatters: currentLang === 'zh' ? '在快速变化的时代，持续学习是保持竞争力的关键。每天30分钟的学习，3年后会让你与同龄人拉开显著差距。' : 'In a rapidly changing era, continuous learning is key to staying competitive. 30 minutes of daily learning will set you significantly apart from peers in 3 years.',
+          currentIssue: currentLang === 'zh'
+            ? (routine.work.growthTime < 30 ? '你每天用于个人成长的时间偏少，这会影响你的长期竞争力。' : '你有学习的习惯，但可以尝试更系统地规划。')
+            : (routine.work.growthTime < 30 ? 'Your daily growth time is low, which will affect your long-term competitiveness.' : 'You have a learning habit — try planning it more systematically.')
+        },
+        leisure: {
+          what: currentLang === 'zh' ? '休闲质量指的是你如何度过工作之外的时光。高质量的休闲能恢复精力、维系关系、提升生活满意度。' : 'Leisure quality refers to how you spend time outside of work. High-quality leisure restores energy, maintains relationships, and improves life satisfaction.',
+          whyItMatters: currentLang === 'zh' ? '过度刷手机会让人陷入低质量休息的陷阱，表面放松实际消耗精力。真正的休闲能让人充电。' : 'Excessive phone scrolling traps you in low-quality rest — it feels relaxing but actually drains energy. True leisure recharges you.',
+          currentIssue: currentLang === 'zh'
+            ? (routine.leisure.screenTime > 4 ? '你的屏幕时间偏长，可能陷入"垃圾娱乐"的陷阱，看似放松实则消耗精力。' : '你的休闲方式相对健康。')
+            : (routine.leisure.screenTime > 4 ? 'Your screen time is high, possibly trapped in the "junk entertainment" loop — it feels like relaxation but drains energy.' : 'Your leisure habits are relatively healthy.')
+        }
+      };
+
+      return {
+        name: core.name,
+        param: core.param,
+        description: `${core.name}${currentLang === 'zh' ? '是最能撬动你人生的参数。当前得分' : ' is the parameter that most leveraged your life. Current score'} ${Math.round(core.score)}/100。`,
+        impactChain: impactChains[core.param] || [],
+        affectedMetrics: affectedMetrics[core.param] || [],
+        reasoning: currentLang === 'zh'
+          ? `在你当前的各项指标中，${core.name}的得分最低，提升空间最大。它是影响最广泛的基础参数。`
+          : `Among your current indicators, ${core.name} has the lowest score and the most room for improvement. It's the most broadly impactful foundational parameter.`,
+        explanation: coreParamExplanations[core.param] || {}
+      };
+    }
+
+    function generateMicroActions(routine, coreParam, baseScores, age) {
+      const sleepDuration = timeDiff(routine.sleep.bedtime, routine.sleep.wakeTime);
+      const sleepScore = Math.max(0, Math.min(100, 100 - Math.abs(8 - sleepDuration) * 8 - (5 - routine.sleep.quality) * 10));
+      const getLevel = (score) => score < 40 ? 0 : score < 60 ? 1 : 2;
+
+      const actions = currentLang === 'zh' ? {
+        sleep: {
+          0: [
+            { action: '睡前10分钟把手机放到客厅充电', trigger: '每晚睡前', duration: '1分钟', why: '你目前睡眠质量较低，屏幕蓝光是主要干扰源。从最简单的物理隔离开始。' },
+            { action: '设一个"准备睡觉"提醒闹钟', trigger: '睡前30分钟', duration: '30秒', why: '你的睡眠时间可能不规律，一个温柔的提醒能帮你建立节奏。' },
+            { action: '躺在床上后不做任何事，只是呼吸', trigger: '躺在床上时', duration: '5分钟', why: '睡不着时越焦虑越睡不着，只是呼吸是最小阻力的放松。' }
+          ],
+          1: [
+            { action: '把睡前例行公事化：洗澡→关灯→上床→阅读', trigger: '每晚固定时间', duration: '形成习惯后自动执行', why: '你已经有一定睡眠基础，建立固定流程能让身体自动进入睡眠模式。' },
+            { action: '记录昨晚几点睡、几点起、睡了几分', trigger: '每天早上', duration: '30秒', why: '数据会说话。追踪一周后你会发现什么让睡眠变好或变差。' },
+            { action: '睡前1小时把灯光调暗或开夜灯模式', trigger: '睡前1小时', duration: '自动完成', why: '你目前睡不好不差，亮度是容易被忽略的因素。' }
+          ],
+          2: [
+            { action: '保持现在的睡前习惯，偶尔提前5分钟上床', trigger: '感觉疲劳时', duration: '1分钟', why: '你的睡眠已经不错，维持+轻微优化即可，不需要大改变。' },
+            { action: '尝试"重力毯"或厚被子看是否睡得更沉', trigger: '今晚睡觉时', duration: '尝试即有效', why: '你已经有好睡眠，探索什么让它从7分到9分。' },
+            { action: '每周记录一次睡眠质量，找到最佳睡眠条件', trigger: '每周日', duration: '2分钟', why: '好上加好。你可以从数据中发现自己的"最优解"。' }
+          ]
+        },
+        exercise: {
+          0: [
+            { action: '坐电梯改为走楼梯1层', trigger: '每次坐电梯时', duration: '1分钟', why: '你目前的运动量很低，久坐是主要问题。从最微小的改变开始。' },
+            { action: '喝水时站着喝完再坐下', trigger: '每次喝水时', duration: '30秒', why: '不需要专门运动，就打破久坐的状态就行。' },
+            { action: '伸一个大大的懒腰', trigger: '久坐30分钟后', duration: '10秒', why: '激活身体，不用出汗，只要动就行。' }
+          ],
+          1: [
+            { action: '提前一站下车走路回去', trigger: '通勤时', duration: '10分钟', why: '你有一定运动基础，利用日常通勤可以轻松增加活动量。' },
+            { action: '每天做3个深蹲（刷牙的时候）', trigger: '刷牙时', duration: '1分钟', why: '把运动嵌入已有的习惯里，不需要额外时间。' },
+            { action: '周末去一次菜市场或超市步行', trigger: '周末', duration: '20分钟', why: '日常生活+轻度运动，一举两得。' }
+          ],
+          2: [
+            { action: '尝试一项你感兴趣的运动（跳舞、拳击、游泳）', trigger: '本周内', duration: '1次', why: '你已经能保持运动习惯，探索乐趣能让你更持续。' },
+            { action: '把运动时间调整到你感觉最有精力的时段', trigger: '今后', duration: '找到最佳时间', why: '运动效率比时长更重要。找到你的黄金时段。' },
+            { action: '每周尝试一个新运动或新路线', trigger: '每周', duration: '1次', why: '你的运动基础很好，变化能带来新鲜感和更多肌肉群锻炼。' }
+          ]
+        },
+        work: {
+          0: [
+            { action: '工作前先打开待办事项写3个字', trigger: '每天开工前', duration: '1分钟', why: '你目前工作状态不佳，从最小行动开始建立节奏。' },
+            { action: '每工作1小时后站起来伸展一下', trigger: '整点报时', duration: '1分钟', why: '中断不是浪费时间，是让大脑重启。' },
+            { action: '把手机放在看不见的地方', trigger: '工作时', duration: '整段时间', why: '你可能没有意识到干扰从哪里来，先物理隔离。' }
+          ],
+          1: [
+            { action: '用"吃青蛙"法：早上先做最难的事', trigger: '每天早上', duration: '30分钟', why: '你有基础工作能力，但精力分配可以优化。' },
+            { action: '设定3个今日小目标并打勾', trigger: '每天开工前', duration: '2分钟', why: '完成感是持续工作的燃料。' },
+            { action: '给自己设置一个"完成信号"（如关电脑时说"今天做得不错"）', trigger: '每天下班时', duration: '10秒', why: '仪式感能帮你从工作状态切换到休息状态。' }
+          ],
+          2: [
+            { action: '尝试"深度工作"：连续90分钟无干扰工作', trigger: '每天选一个时段', duration: '90分钟', why: '你已经有很好的工作状态，挑战更高的专注力。' },
+            { action: '每周做一次工作复盘：什么做得好，什么可以改', trigger: '每周五', duration: '15分钟', why: '你已经很强了，持续优化就是顶尖。' },
+            { action: '把一个工作流程写成清单，下次更快', trigger: '感觉做重复的事时', duration: '5分钟', why: '你擅长工作，把经验固化能让效率翻倍。' }
+          ]
+        },
+        growth: {
+          0: [
+            { action: '通勤时听一集播客（就算没听进去）', trigger: '通勤时', duration: '20分钟', why: '你目前没有学习习惯，先让学习"发生"再说。' },
+            { action: '在床头放一本书，每天看1页', trigger: '睡前', duration: '1分钟', why: '门槛低到不可能失败，先建立"存在"感。' },
+            { action: '关注1个你感兴趣的博主，每天刷10分钟', trigger: '每天固定时间', duration: '10分钟', why: '让学习变得有趣而不是任务。' }
+          ],
+          1: [
+            { action: '把学到的知识点发给朋友或发朋友圈', trigger: '学到新东西时', duration: '3分钟', why: '费曼学习法：教就是最好的学。你有这个基础。' },
+            { action: '通勤时间用来听与你目标相关的音频', trigger: '通勤时', duration: '固定20分钟', why: '你有一定的学习习惯，时间优化能放大效果。' },
+            { action: '每周尝试把一个知识用在自己的工作/生活里', trigger: '每周', duration: '10分钟思考', why: '知行合一。你的学习正在积累，把它用起来。' }
+          ],
+          2: [
+            { action: '开始一个副业项目或作品集', trigger: '本季度', duration: '从小处开始', why: '你已经具备很强的学习能力，是时候创造输出了。' },
+            { action: '每周写一篇短文/笔记总结所学', trigger: '每周', duration: '20分钟', why: '你的知识储备已经很丰富，整理能帮你融会贯通。' },
+            { action: '找一个导师或与志同道合的人交流', trigger: '本月', duration: '1次深入对话', why: '你已经走了很远，与人交流能帮你突破瓶颈。' }
+          ]
+        },
+        leisure: {
+          0: [
+            { action: '发呆10分钟，不看任何屏幕', trigger: '每天至少1次', duration: '10分钟', why: '你目前休闲严重不足，屏幕可能是唯一放松方式，但这不真正休息。' },
+            { action: '走到窗边看天空或植物30秒', trigger: '感到疲惫时', duration: '30秒', why: '自然光和绿色能快速恢复精力，成本几乎为零。' },
+            { action: '给自己泡一杯热饮，不做事，就拿着', trigger: '休息时', duration: '5分钟', why: '仪式感是最低成本的"活在当下"。' }
+          ],
+          1: [
+            { action: '每天留30分钟纯粹浪费时间（发呆/闲逛/看云）', trigger: '每天留出这个时间', duration: '30分钟', why: '你的休闲被效率绑架了，纯休闲才能真正充电。' },
+            { action: '约一个人做一件不功利的事（不聊工作、不约饭）', trigger: '每周', duration: '1次', why: '关系需要滋养，你有一定的社交，但深度连接需要时间。' },
+            { action: '尝试一个"无目的"的活动：随便走走、随便看看', trigger: '周末', duration: '1小时', why: '你习惯了"有意义"，偶尔漫无目的也是一种休息。' }
+          ],
+          2: [
+            { action: '把休闲变成创作：拍照、写东西、录视频', trigger: '休闲时', duration: '随意', why: '你已经会休息了，创作型的休闲能带来更大的满足感。' },
+            { action: '策划一次"高质量休息"：不是刷手机，是真正充电', trigger: '每周末', duration: '一个下午', why: '你的休闲已经不错，从"量"升级到"质"。' },
+            { action: '把一个爱好发展成能分享的技能', trigger: '长期', duration: '持续投入', why: '你已经懂得生活了，把热爱转化为价值是下一步。' }
+          ]
+        }
+      } : {
+        sleep: {
+          0: [
+            { action: 'Put your phone in the living room to charge 10 min before bed', trigger: 'Every night before bed', duration: '1 min', why: 'Your sleep quality is low — screen blue light is the main culprit. Start with the simplest physical separation.' },
+            { action: 'Set a "get ready for bed" reminder alarm', trigger: '30 min before bed', duration: '30 sec', why: 'Your sleep schedule might be irregular. A gentle reminder helps build rhythm.' },
+            { action: 'Once in bed, do nothing — just breathe', trigger: 'When in bed', duration: '5 min', why: 'The more you anxiety about sleep, the less you sleep. Breathing is the lowest-friction relaxation.' }
+          ],
+          1: [
+            { action: 'Make bedtime routine automatic: bath → lights off → bed → read', trigger: 'Same time every night', duration: 'Automatic once habit forms', why: 'You already have a sleep foundation. A fixed routine lets your body automatically enter sleep mode.' },
+            { action: 'Record last night\'s bedtime, wake time, sleep quality', trigger: 'Every morning', duration: '30 sec', why: 'Data speaks. After a week of tracking, you\'ll see what makes sleep better or worse.' },
+            { action: 'Dim the lights or use night mode 1 hour before bed', trigger: '1 hour before bed', duration: 'Automatic', why: 'Your sleep is okay-ish. Brightness is an easily overlooked factor.' }
+          ],
+          2: [
+            { action: 'Keep your current bedtime habit; occasionally go to bed 5 min earlier', trigger: 'When feeling tired', duration: '1 min', why: 'Your sleep is already good. Maintain + minor optimization is enough — no big changes needed.' },
+            { action: 'Try a weighted blanket or heavier quilt to see if you sleep deeper', trigger: 'Tonight', duration: 'Just try it', why: 'You already sleep well. Explore what takes it from 7 to 9.' },
+            { action: 'Track sleep quality once a week to find optimal sleep conditions', trigger: 'Every Sunday', duration: '2 min', why: 'Level up on top. You can discover your "optimal solution" from the data.' }
+          ]
+        },
+        exercise: {
+          0: [
+            { action: 'Take stairs 1 floor instead of the elevator', trigger: 'Every time you take the elevator', duration: '1 min', why: 'Your exercise volume is very low. Prolonged sitting is the main issue. Start with the tiniest change.' },
+            { action: 'Stand up while finishing your water, then sit back down', trigger: 'Every time you drink water', duration: '30 sec', why: 'No need for dedicated exercise — just break the prolonged sitting state.' },
+            { action: 'Do one big stretch', trigger: 'After 30 min of sitting', duration: '10 sec', why: 'Activate the body. No need to sweat — just move.' }
+          ],
+          1: [
+            { action: 'Get off public transit one stop early and walk back', trigger: 'During commute', duration: '10 min', why: 'You have some exercise foundation. Using your daily commute is an easy way to add activity.' },
+            { action: 'Do 3 squats every day (while brushing teeth)', trigger: 'While brushing teeth', duration: '1 min', why: 'Embed exercise into existing habits — no extra time needed.' },
+            { action: 'Go to a farmer\'s market or supermarket on foot on weekends', trigger: 'Weekends', duration: '20 min', why: 'Daily life + light exercise — best of both worlds.' }
+          ],
+          2: [
+            { action: 'Try a sport you\'re interested in (dancing, boxing, swimming)', trigger: 'This week', duration: '1 session', why: 'You can maintain an exercise habit. Exploring fun keeps you more consistent.' },
+            { action: 'Adjust exercise time to when you feel most energetic', trigger: 'Going forward', duration: 'Find your best time', why: 'Exercise efficiency matters more than duration. Find your golden hour.' },
+            { action: 'Try a new sport or new route every week', trigger: 'Every week', duration: '1 session', why: 'Your exercise foundation is good. Variety brings fresh excitement and works more muscle groups.' }
+          ]
+        },
+        work: {
+          0: [
+            { action: 'Before work, open your to-do list and write 3 characters', trigger: 'Before starting work each day', duration: '1 min', why: 'Your work state is poor. Start with the smallest action to build rhythm.' },
+            { action: 'Stand up and stretch after every 1 hour of work', trigger: 'On the hour', duration: '1 min', why: 'Breaking is not wasting time — it restarts your brain.' },
+            { action: 'Put your phone somewhere you can\'t see it', trigger: 'During work', duration: 'Whole period', why: 'You may not realize where the distractions come from. Start with physical separation.' }
+          ],
+          1: [
+            { action: 'Use "Eat the Frog": do the hardest thing first in the morning', trigger: 'Every morning', duration: '30 min', why: 'You have basic work ability but energy allocation can be optimized.' },
+            { action: 'Set 3 small daily goals and check them off', trigger: 'Before starting work', duration: '2 min', why: 'A sense of completion fuels sustained work.' },
+            { action: 'Give yourself a "completion signal" (e.g., say "good job today" when closing your computer)', trigger: 'Every day at end of work', duration: '10 sec', why: 'Ritual helps you switch from work mode to rest mode.' }
+          ],
+          2: [
+            { action: 'Try "Deep Work": 90 minutes of uninterrupted work', trigger: 'Choose one time slot daily', duration: '90 min', why: 'You already have great work habits. Challenge for higher focus.' },
+            { action: 'Do a weekly work review: what went well, what can improve', trigger: 'Every Friday', duration: '15 min', why: 'You\'re already strong. Continuous optimization leads to excellence.' },
+            { action: 'Write a checklist for one work process so you can do it faster next time', trigger: 'When doing repetitive tasks', duration: '5 min', why: 'You\'re good at work. Solidifying experience can double efficiency.' }
+          ]
+        },
+        growth: {
+          0: [
+            { action: 'Listen to a podcast episode during your commute (even if it doesn\'t sink in)', trigger: 'During commute', duration: '20 min', why: 'You have no learning habit yet. First just make learning "happen."' },
+            { action: 'Put a book by your bed, read 1 page every day', trigger: 'Before sleep', duration: '1 min', why: 'Low barrier it\'s impossible to fail. First establish a sense of "existence."' },
+            { action: 'Follow 1 blogger you\'re interested in, browse 10 min daily', trigger: 'Same time every day', duration: '10 min', why: 'Make learning fun rather than a task.' }
+          ],
+          1: [
+            { action: 'Share what you learned with a friend or post it on social media', trigger: 'When you learn something new', duration: '3 min', why: 'Feynman technique: teaching is the best way to learn. You have the foundation.' },
+            { action: 'Use commute time to listen to audio related to your goals', trigger: 'During commute', duration: 'Fixed 20 min', why: 'You have a learning habit. Time optimization amplifies results.' },
+            { action: 'Try to apply one piece of knowledge to your work/life every week', trigger: 'Weekly', duration: '10 min reflection', why: 'Knowledge + action. Your learning is accumulating — use it.' }
+          ],
+          2: [
+            { action: 'Start a side project or portfolio', trigger: 'This quarter', duration: 'Start small', why: 'You already have strong learning ability. Time to create output.' },
+            { action: 'Write a short article or notes summarizing what you learned each week', trigger: 'Weekly', duration: '20 min', why: 'Your knowledge reserve is rich. Organizing helps you integrate and connect.' },
+            { action: 'Find a mentor or connect with like-minded people', trigger: 'This month', duration: '1 deep conversation', why: 'You\'ve come a long way. Connecting with others helps you break through bottlenecks.' }
+          ]
+        },
+        leisure: {
+          0: [
+            { action: 'Daydream for 10 minutes without any screen', trigger: 'At least once a day', duration: '10 min', why: 'Your leisure is severely lacking. Screens might be your only relaxation — but it\'s not truly restful.' },
+            { action: 'Walk to the window and look at the sky or plants for 30 seconds', trigger: 'When feeling tired', duration: '30 sec', why: 'Natural light and green restore energy fast. Near-zero cost.' },
+            { action: 'Make yourself a hot drink, don\'t do anything, just hold it', trigger: 'During rest', duration: '5 min', why: 'Ritual is the lowest-cost way to "be present."' }
+          ],
+          1: [
+            { action: 'Leave 30 minutes every day for pure idleness (daydreaming, wandering, watching clouds)', trigger: 'Block this time daily', duration: '30 min', why: 'Your leisure has been kidnapped by productivity. Pure leisure truly recharges.' },
+            { action: 'Invite someone to do something non-transactional (not talk about work, not a dinner)', trigger: 'Weekly', duration: '1 session', why: 'Relationships need nurturing. You have social life but deep connection takes time.' },
+            { action: 'Try an "aimless" activity: just walk, just look around', trigger: 'Weekends', duration: '1 hr', why: 'You\'re used to everything being "meaningful." Aimlessness is also a form of rest.' }
+          ],
+          2: [
+            { action: 'Turn leisure into creation: take photos, write, record videos', trigger: 'During leisure time', duration: 'At will', why: 'You know how to rest. Creative leisure brings greater satisfaction.' },
+            { action: 'Plan one "high-quality rest": not scrolling phone, but truly recharging', trigger: 'Every weekend', duration: 'One afternoon', why: 'Your leisure is already good. Upgrade from "quantity" to "quality."' },
+            { action: 'Develop one hobby into a shareable skill', trigger: 'Long-term', duration: 'Continuous investment', why: 'You know how to live. The next step is turning passion into value.' }
+          ]
+        }
+      };
+
+      let paramScore = 50;
+      switch (coreParam) {
+        case 'sleep': paramScore = sleepScore; break;
+        case 'exercise': paramScore = baseScores.health; break;
+        case 'work': paramScore = baseScores.finance; break;
+        case 'growth': paramScore = baseScores.growth; break;
+        case 'leisure': paramScore = baseScores.relationships; break;
+      }
+
+      const level = getLevel(paramScore);
+      const selectedActions = actions[coreParam]?.[level] || actions.sleep[1];
+
+      if (age > 45 && currentLang === 'zh') {
+        selectedActions.forEach(a => {
+          if (a.action.includes('凌晨') || a.action.includes('很晚')) {
+            a.action = a.action.replace(new RegExp('熬夜', 'gi'), '在精力最好的时候做');
+          }
+        });
+      }
+
+      return selectedActions;
+    }
+    function calculateRealisticImprovement(coreParam, baseScores) {
+      // 根据用户当前分数和核心参数，计算真实的改进幅度
+      const scoreMap = { sleep: 'health', exercise: 'health', work: 'finance', growth: 'growth', leisure: 'relationships' };
+      const metric = scoreMap[coreParam] || 'health';
+      const score = baseScores[metric];
+
+      // 根据当前分数决定改进幅度
+      // < 40 分：大幅改进（20-25）
+      // 40-60 分：中等改进（15-18）
+      // > 60 分：小幅改进（10-12）
+      if (score < 40) {
+        return coreParam === 'growth' ? 25 : 22; // 成长/学习提升空间最大
+      } else if (score < 60) {
+        return coreParam === 'growth' ? 18 : 16;
+      } else {
+        return coreParam === 'growth' ? 12 : 10;
+      }
+    }
+
+    function generateImprovedTrajectory(routine, coreParam, improvement, months = null) {
+      const age = state.userProfile.age || 25;
+      months = months || getTrajectoryMonths(age);
+
+      const baseScores = calculateBaseScores(routine);
+      const trajectory = [];
+      let current = { ...baseScores };
+
+      // 如果improvement未提供，根据用户当前分数计算
+      if (!improvement || improvement === 15) {
+        improvement = calculateRealisticImprovement(coreParam, baseScores);
+      }
+
+      // 应用改善：提升核心参数相关的维度
+      switch (coreParam) {
+        case 'sleep': current.health = Math.min(100, current.health + improvement * 0.8); break;
+        case 'exercise': current.health = Math.min(100, current.health + improvement * 0.9); break;
+        case 'work': current.finance = Math.min(100, current.finance + improvement * 0.8); break;
+        case 'growth': current.growth = Math.min(100, current.growth + improvement * 0.9); break;
+        case 'leisure': current.relationships = Math.min(100, current.relationships + improvement * 0.8); break;
+      }
+
+      // 改善后的生活习惯更好
+      const improvedRoutine = JSON.parse(JSON.stringify(routine));
+      if (coreParam === 'sleep') { improvedRoutine.sleep.quality = Math.min(10, improvedRoutine.sleep.quality + 1.5); }
+      if (coreParam === 'exercise') { improvedRoutine.exercise.timesPerWeek += 1; }
+      if (coreParam === 'work') { improvedRoutine.work.focusHours += 0.5; }
+      if (coreParam === 'growth') { improvedRoutine.work.growthTime += 20; }
+      if (coreParam === 'leisure') { improvedRoutine.leisure.screenTime = Math.max(0, improvedRoutine.leisure.screenTime - 1.5); }
+
+      for (let month = 0; month <= months; month++) {
+        const overall = current.health * 0.3 + current.finance * 0.3 + current.relationships * 0.2 + current.growth * 0.2;
+        trajectory.push({
+          month,
+          health: Math.round(current.health),
+          finance: Math.round(current.finance),
+          relationships: Math.round(current.relationships),
+          growth: Math.round(current.growth),
+          overall: Math.round(overall)
+        });
+
+        // 改善后的轨迹：使用更科学真实的模型
+        const healthTrend = age > 40 ? -0.25 : (age > 25 ? -0.1 : 0.15);
+        const exerciseEffect = improvedRoutine.exercise.timesPerWeek > 2 ? 0.25 : (improvedRoutine.exercise.timesPerWeek > 0 ? 0 : -0.2);
+        current.health += healthTrend + exerciseEffect + (Math.random() - 0.5) * 2;
+
+        const financeTrend = improvedRoutine.work.focusHours > 4 ? 0.3 : (improvedRoutine.work.focusHours > 2 ? 0.15 : -0.05);
+        current.finance += financeTrend + (Math.random() - 0.5) * 1.5;
+
+        const relationTrend = improvedRoutine.leisure.screenTime < 3 ? 0.2 : (improvedRoutine.leisure.screenTime > 5 ? -0.15 : 0.05);
+        current.relationships += relationTrend + (Math.random() - 0.5) * 1.5;
+
+        const growthTrend = improvedRoutine.work.growthTime > 60 ? 0.35 : (improvedRoutine.work.growthTime > 30 ? 0.15 : -0.1);
+        current.growth += growthTrend + (Math.random() - 0.5) * 2;
+
+        current.health = Math.max(15, Math.min(100, current.health));
+        current.finance = Math.max(15, Math.min(100, current.finance));
+        current.relationships = Math.max(15, Math.min(100, current.relationships));
+        current.growth = Math.max(15, Math.min(100, current.growth));
+      }
+      return trajectory;
+    }
+
+    // ==================== LINE CHART RENDERER ====================
+    function drawLineChart(canvasId, data, options = {}) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const width = rect.width;
+      const height = rect.height;
+      const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+      const chartWidth = width - padding.left - padding.right;
+      const chartHeight = height - padding.top - padding.bottom;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const age = state.userProfile.age || 25;
+      const months = data.length > 1 ? data[data.length - 1].month : 36;
+      const years = Math.round(months / 12);
+
+      const labels = data.map((d, i) => {
+        if (i === 0) return '现在';
+        const yearNum = Math.round(d.month / 12);
+        if (yearNum * 12 === d.month) return `${yearNum}年`;
+        return `${d.month}月`;
+      });
+      const gridCount = 5;
+
+      ctx.strokeStyle = '#38383F';
+      ctx.lineWidth = 1;
+      ctx.font = '11px Georgia';
+      ctx.fillStyle = '#6B6B75';
+      ctx.textAlign = 'right';
+
+      for (let i = 0; i <= gridCount; i++) {
+        const y = padding.top + (chartHeight / gridCount) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(width - padding.right, y);
+        ctx.stroke();
+
+        const value = 100 - (100 / gridCount) * i;
+        ctx.fillText(Math.round(value), padding.left - 8, y + 4);
+      }
+
+      ctx.textAlign = 'center';
+      const step = Math.max(1, Math.floor(labels.length / 8));
+      labels.forEach((label, i) => {
+        if (i % step === 0 || i === labels.length - 1) {
+          const x = padding.left + (chartWidth / (labels.length - 1)) * i;
+          ctx.fillText(label, x, height - 8);
+        }
+      });
+
+      const metricColors = {
+        health: '#FB7185',
+        finance: '#FBBF24',
+        relationships: '#A78BFA',
+        growth: '#22D3EE',
+        overall: '#C9A0A0'
+      };
+
+      const metricsToDraw = options.metrics || ['overall'];
+
+      metricsToDraw.forEach(metric => {
+        if (!metricColors[metric]) return;
+
+        ctx.beginPath();
+        ctx.strokeStyle = metricColors[metric];
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        data.forEach((point, i) => {
+          const x = padding.left + (chartWidth / (data.length - 1)) * i;
+          const y = padding.top + chartHeight - (point[metric] / 100) * chartHeight;
+
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+
+        ctx.stroke();
+
+        ctx.fillStyle = metricColors[metric];
+        const lastPoint = data[data.length - 1];
+        const lastX = padding.left + chartWidth;
+        const lastY = padding.top + chartHeight - (lastPoint[metric] / 100) * chartHeight;
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawComparisonChart(canvasId, originalData, newData) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const width = rect.width;
+      const height = rect.height;
+      const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+      const chartWidth = width - padding.left - padding.right;
+      const chartHeight = height - padding.top - padding.bottom;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const labels = originalData.map((d, i) => {
+        if (i === 0) return '现在';
+        const yearNum = Math.round(d.month / 12);
+        if (yearNum * 12 === d.month) return `${yearNum}年`;
+        return `${d.month}月`;
+      });
+      const gridCount = 5;
+
+      ctx.strokeStyle = '#38383F';
+      ctx.lineWidth = 1;
+      ctx.font = '11px Georgia';
+      ctx.fillStyle = '#6B6B75';
+      ctx.textAlign = 'right';
+
+      for (let i = 0; i <= gridCount; i++) {
+        const y = padding.top + (chartHeight / gridCount) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(width - padding.right, y);
+        ctx.stroke();
+
+        const value = 100 - (100 / gridCount) * i;
+        ctx.fillText(Math.round(value), padding.left - 8, y + 4);
+      }
+
+      ctx.textAlign = 'center';
+      const step = Math.max(1, Math.floor(labels.length / 6));
+      const lastIndex = labels.length - 1;
+      labels.forEach((label, i) => {
+        if (i === 0 || i === lastIndex || (i % step === 0 && i !== lastIndex - (lastIndex % step))) {
+          const x = padding.left + (chartWidth / (labels.length - 1)) * i;
+          ctx.fillText(label, x, height - 8);
+        }
+      });
+
+      // Draw original trajectory
+      ctx.beginPath();
+      ctx.strokeStyle = '#6B6B75';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      originalData.forEach((point, i) => {
+        const x = padding.left + (chartWidth / (originalData.length - 1)) * i;
+        const y = padding.top + chartHeight - (point.overall / 100) * chartHeight;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw new trajectory
+      ctx.beginPath();
+      ctx.strokeStyle = '#C9A0A0';
+      ctx.lineWidth = 2.5;
+      newData.forEach((point, i) => {
+        const x = padding.left + (chartWidth / (newData.length - 1)) * i;
+        const y = padding.top + chartHeight - (point.overall / 100) * chartHeight;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // End points
+      ctx.fillStyle = '#6B6B75';
+      const origEnd = originalData[originalData.length - 1];
+      ctx.beginPath();
+      ctx.arc(padding.left + chartWidth, padding.top + chartHeight - (origEnd.overall / 100) * chartHeight, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#C9A0A0';
+      const newEnd = newData[newData.length - 1];
+      ctx.beginPath();
+      ctx.arc(padding.left + chartWidth, padding.top + chartHeight - (newEnd.overall / 100) * chartHeight, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // ==================== COMPONENTS ====================
+    function ProgressIndicator() {
+      const stepLabels = [t('stepStart'), t('stepDaily'), t('stepProbes'), t('stepCurrent'), t('stepCore'), t('stepMicro')];
+      const stepKeys = ['welcome', 'daily', 'probes', 'current', 'core', 'micro'];
+      const currentIndex = stepKeys.indexOf(state.currentStep);
+
+      return `
+        <div class="w-full">
+          <div class="flex items-center justify-between relative">
+            <div class="absolute top-4 left-0 right-0 h-0.5 bg-border"></div>
+            <div class="absolute top-4 left-0 h-0.5 bg-accent-pink transition-all duration-300" style="width: ${(currentIndex / 5) * 100}%"></div>
+            ${stepLabels.map((label, i) => {
+              const isCompleted = i < currentIndex;
+              const isCurrent = i === currentIndex;
+              return `
+                <div class="relative flex flex-col items-center z-10">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center font-english text-sm font-medium transition-all duration-300
+                    ${isCompleted ? 'bg-accent-pink text-bg-primary' : ''}
+                    ${isCurrent ? 'bg-accent-pink-light text-bg-primary shadow-lg shadow-accent-pink/30' : ''}
+                    ${!isCompleted && !isCurrent ? 'bg-bg-tertiary text-text-muted border border-border' : ''}">
+                    ${isCompleted ? '✓' : i + 1}
+                  </div>
+                  <span class="mt-2 text-xs font-medium whitespace-nowrap
+                    ${isCurrent ? 'text-accent-pink-light' : isCompleted ? 'text-accent-pink' : 'text-text-muted'}">
+                    ${label}
+                  </span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWelcome() {
+      return `
+        <div class="min-h-screen flex flex-col items-center justify-center px-6 py-12">
+          <div class="max-w-2xl text-center animate-fade-in">
+            <div class="mb-8">
+              <h1 class="font-english text-5xl md:text-6xl font-bold text-text-primary mb-4 tracking-wide">${t('welcomeTitle')}</h1>
+              <p class="font-chinese text-2xl text-accent-pink">${t('welcomeSubtitle')}</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 mb-10">
+              ${[
+                { num: t('welcomeNum01'), title: t('welcomeCard1Title'), desc: t('welcomeCard1Desc') },
+                { num: t('welcomeNum02'), title: t('welcomeCard2Title'), desc: t('welcomeCard2Desc') },
+                { num: t('welcomeNum03'), title: t('welcomeCard3Title'), desc: t('welcomeCard3Desc') }
+              ].map((item, i) => `
+                <div class="bg-bg-secondary rounded-card border border-border p-5 text-left animate-fade-in" style="animation-delay: ${0.1 * i}s">
+                  <span class="font-english text-accent-pink text-sm">${item.num}</span>
+                  <h3 class="font-bold text-text-primary mt-2 mb-1">${item.title}</h3>
+                  <p class="text-sm text-text-secondary">${item.desc}</p>
+                </div>
+              `).join('')}
+            </div>
+
+            <button onclick="goToStep('daily')" class="bg-accent-pink text-bg-primary px-8 py-3.5 rounded-btn font-medium text-lg hover:bg-accent-pink/90 transition-all hover:scale-[1.02] active:scale-[0.98]">
+              ${t('welcomeBtn')}
+            </button>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function renderDailyInput() {
+      const routine = state.userProfile.dailyRoutine;
+      const age = state.userProfile.age || 25;
+
+      const modules = [
+        {
+          key: 'age', icon: '', label: t('ageLabel'),
+          content: `
+            <div>
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('ageYourAge')}: <span id="age-value" class="text-accent-pink font-english">${age}</span></label>
+              <input type="range" min="18" max="70" value="${age}"
+                oninput="document.getElementById('age-value').textContent = this.value; updateUserAge(parseInt(this.value))"
+                class="w-full">
+              <p class="mt-2 text-xs text-text-muted">${t('ageHint')}</p>
+            </div>
+          `
+        },
+        {
+          key: 'sleep', icon: '', label: t('sleepLabel'),
+          content: `
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-text-secondary mb-2">${t('sleepBedtime')}</label>
+                <input type="time" value="${routine.sleep.bedtime}" onchange="updateRoutine('sleep', 'bedtime', this.value)"
+                  class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-text-secondary mb-2">${t('sleepWakeTime')}</label>
+                <input type="time" value="${routine.sleep.wakeTime}" onchange="updateRoutine('sleep', 'wakeTime', this.value)"
+                  class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+              </div>
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('sleepQuality')}: <span id="sleep-quality-value" class="text-accent-pink font-english">${routine.sleep.quality}</span></label>
+              <input type="range" min="1" max="5" value="${routine.sleep.quality}"
+                oninput="document.getElementById('sleep-quality-value').textContent = this.value; updateRoutine('sleep', 'quality', parseInt(this.value))"
+                class="w-full">
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('sleepNightWakeups')}</label>
+              <input type="number" min="0" max="10" value="${routine.sleep.nightWakeups}" onchange="updateRoutine('sleep', 'nightWakeups', parseInt(this.value))"
+                class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+            </div>
+          `
+        },
+        {
+          key: 'diet', icon: '', label: t('dietLabel'),
+          content: `
+            <div>
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('dietBreakfast')}</label>
+              <select onchange="updateRoutine('diet', 'breakfast', this.value)"
+                class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+                <option value="always" ${routine.diet.breakfast === 'always' ? 'selected' : ''}>${t('dietBreakfastAlways')}</option>
+                <option value="sometimes" ${routine.diet.breakfast === 'sometimes' ? 'selected' : ''}>${t('dietBreakfastSometimes')}</option>
+                <option value="never" ${routine.diet.breakfast === 'never' ? 'selected' : ''}>${t('dietBreakfastNever')}</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <label class="block text-sm font-medium text-text-secondary mb-2">${t('dietLunchTime')}</label>
+                <input type="time" value="${routine.diet.lunchTime}" onchange="updateRoutine('diet', 'lunchTime', this.value)"
+                  class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-text-secondary mb-2">${t('dietDinnerTime')}</label>
+                <input type="time" value="${routine.diet.dinnerTime}" onchange="updateRoutine('diet', 'dinnerTime', this.value)"
+                  class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+              </div>
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('dietWater')}</label>
+              <input type="number" min="0" max="20" value="${routine.diet.waterCups}" onchange="updateRoutine('diet', 'waterCups', parseInt(this.value))"
+                class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+            </div>
+          `
+        },
+        {
+          key: 'exercise', icon: '', label: t('exerciseLabel'),
+          content: `
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-text-secondary mb-2">${t('exerciseFreq')}</label>
+                <input type="number" min="0" max="14" value="${routine.exercise.timesPerWeek}" onchange="updateRoutine('exercise', 'timesPerWeek', parseInt(this.value))"
+                  class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-text-secondary mb-2">${t('exerciseDuration')}</label>
+                <input type="number" min="0" max="300" value="${routine.exercise.duration}" onchange="updateRoutine('exercise', 'duration', parseInt(this.value))"
+                  class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+              </div>
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('exerciseType')}</label>
+              <input type="text" placeholder="${t('exerciseTypePlaceholder')}" value="${routine.exercise.type || ''}" onchange="updateRoutine('exercise', 'type', this.value)"
+                class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('exerciseSedentary')}: <span id="sedentary-value" class="text-accent-pink font-english">${routine.exercise.sedentaryHours}</span></label>
+              <input type="range" min="2" max="14" value="${routine.exercise.sedentaryHours}"
+                oninput="document.getElementById('sedentary-value').textContent = this.value; updateRoutine('exercise', 'sedentaryHours', parseInt(this.value))"
+                class="w-full">
+            </div>
+          `
+        },
+        {
+          key: 'work', icon: '', label: t('workLabel'),
+          content: `
+            <div>
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('workType')}</label>
+              <input type="text" placeholder="${t('workTypePlaceholder')}" value="${routine.work.type || ''}" onchange="updateRoutine('work', 'type', this.value)"
+                class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('workFocus')}: <span id="focus-hours-value" class="text-accent-pink font-english">${routine.work.focusHours}</span></label>
+              <input type="range" min="1" max="12" value="${routine.work.focusHours}"
+                oninput="document.getElementById('focus-hours-value').textContent = this.value; updateRoutine('work', 'focusHours', parseInt(this.value))"
+                class="w-full">
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('workOvertime')}</label>
+              <select onchange="updateRoutine('work', 'overtimeFreq', this.value)"
+                class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+                <option value="never" ${routine.work.overtimeFreq === 'never' ? 'selected' : ''}>${t('workOvertimeNever')}</option>
+                <option value="sometimes" ${routine.work.overtimeFreq === 'sometimes' ? 'selected' : ''}>${t('workOvertimeSometimes')}</option>
+                <option value="often" ${routine.work.overtimeFreq === 'often' ? 'selected' : ''}>${t('workOvertimeOften')}</option>
+              </select>
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('workGrowth')}: <span id="growth-time-value" class="text-accent-pink font-english">${routine.work.growthTime}</span></label>
+              <input type="range" min="0" max="120" step="5" value="${routine.work.growthTime}"
+                oninput="document.getElementById('growth-time-value').textContent = this.value; updateRoutine('work', 'growthTime', parseInt(this.value))"
+                class="w-full">
+            </div>
+          `
+        },
+        {
+          key: 'leisure', icon: '', label: t('leisureLabel'),
+          content: `
+            <div>
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('leisureScreen')}: <span id="screen-time-value" class="text-accent-pink font-english">${routine.leisure.screenTime}</span></label>
+              <input type="range" min="0" max="12" value="${routine.leisure.screenTime}"
+                oninput="document.getElementById('screen-time-value').textContent = this.value; updateRoutine('leisure', 'screenTime', parseInt(this.value))"
+                class="w-full">
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('leisureSocial')}</label>
+              <input type="number" min="0" max="21" value="${routine.leisure.socialFreq}" onchange="updateRoutine('leisure', 'socialFreq', parseInt(this.value))"
+                class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+            </div>
+          `
+        },
+        {
+          key: 'health', icon: '', label: t('healthLabel'),
+          content: `
+            <div>
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('healthStress')}: <span id="stress-level-value" class="text-accent-pink font-english">${routine.health.stressLevel}</span></label>
+              <input type="range" min="1" max="10" value="${routine.health.stressLevel}"
+                oninput="document.getElementById('stress-level-value').textContent = this.value; updateRoutine('health', 'stressLevel', parseInt(this.value))"
+                class="w-full">
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-text-secondary mb-2">${t('healthCheckup')}</label>
+              <select onchange="updateRoutine('health', 'checkupFreq', this.value)"
+                class="w-full px-4 py-3 bg-bg-tertiary border border-border rounded-input text-text-primary">
+                <option value="never" ${routine.health.checkupFreq === 'never' ? 'selected' : ''}>${t('healthCheckupNever')}</option>
+                <option value="rarely" ${routine.health.checkupFreq === 'rarely' ? 'selected' : ''}>${t('healthCheckupRarely')}</option>
+                <option value="yearly" ${routine.health.checkupFreq === 'yearly' ? 'selected' : ''}>${t('healthCheckupYearly')}</option>
+                <option value="half" ${routine.health.checkupFreq === 'half' ? 'selected' : ''}>${t('healthCheckupHalf')}</option>
+              </select>
+            </div>
+          `
+        }
+      ];
+
+      return `
+        <div class="min-h-screen px-4 py-8">
+          <div class="max-w-2xl mx-auto">
+            <div class="mb-8 animate-fade-in">
+              <h1 class="text-2xl font-bold text-text-primary mb-2">${t('dailyTitle')}</h1>
+              <p class="text-text-secondary">${t('dailySubtitle')}</p>
+            </div>
+
+            <div class="space-y-3 mb-8">
+              ${modules.map((mod, i) => `
+                <div class="bg-bg-secondary rounded-card border border-border overflow-hidden animate-fade-in" style="animation-delay: ${0.05 * i}s">
+                  <button onclick="toggleModule('${mod.key}')" class="w-full px-6 py-4 flex items-center justify-between hover:bg-bg-tertiary/50 transition-colors">
+                    <div class="flex items-center gap-3">
+                      <span class="text-2xl">${mod.icon}</span>
+                      <span class="font-semibold text-text-primary">${mod.label}</span>
+                    </div>
+                    <svg class="w-5 h-5 text-text-muted transition-transform module-arrow-${mod.key}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                  <div class="module-content-${mod.key} px-6 pb-6 pt-2" style="display: none;">
+                    <div class="space-y-4">
+                      ${mod.content}
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="flex justify-between items-center animate-fade-in">
+              <p class="text-sm text-text-muted">${t('dailyModules7')}</p>
+              <button onclick="goToStep('probes')" class="bg-accent-pink text-bg-primary px-5 py-2.5 rounded-btn font-medium hover:bg-accent-pink/90 transition-all">
+                ${t('dailyContinue')}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderProbes() {
+      return `
+        <div class="min-h-screen flex flex-col items-center justify-center px-6">
+          <div class="max-w-xl mx-auto text-center animate-fade-in">
+            <h2 class="text-2xl font-bold text-text-primary mb-4">${t('probesTitle')}</h2>
+            <p class="text-text-secondary mb-6">${t('probesSubtitle')}</p>
+            <button onclick="goToStep('current')" class="bg-accent-pink text-bg-primary px-6 py-3 rounded-btn font-medium hover:bg-accent-pink/90 transition-all">
+              ${t('probesBtn')}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCurrentTrajectory() {
+      const routine = state.userProfile.dailyRoutine;
+      const age = state.userProfile.age || 25;
+      const baseScores = calculateBaseScores(routine);
+      const trajectory = generateTrajectory(routine);
+      const finalScores = trajectory[trajectory.length - 1];
+      const months = trajectory.length - 1;
+      const years = Math.round(months / 12);
+      const futureAge = age + years;
+
+      const metrics = [
+        { key: 'health', label: t('currentHealth'), icon: '', color: '#FB7185', initial: Math.round(baseScores.health), final: finalScores.health, desc: t('currentHealthDesc') },
+        { key: 'finance', label: t('currentFinance'), icon: '', color: '#FBBF24', initial: Math.round(baseScores.finance), final: finalScores.finance, desc: t('currentFinanceDesc') },
+        { key: 'relationships', label: t('currentRelationships'), icon: '', color: '#A78BFA', initial: Math.round(baseScores.relationships), final: finalScores.relationships, desc: t('currentRelationshipsDesc') },
+        { key: 'growth', label: t('currentGrowth'), icon: '', color: '#22D3EE', initial: Math.round(baseScores.growth), final: finalScores.growth, desc: t('currentGrowthDesc') }
+      ];
+
+      const totalNow = Math.round(baseScores.health + baseScores.finance + baseScores.relationships + baseScores.growth);
+      const totalLater = Math.round(finalScores.health + finalScores.finance + finalScores.relationships + finalScores.growth);
+
+      const subtitle = t('currentSubtitle').replace('{years}', `<span class="font-english text-accent-pink">${years}</span>`).replace('{age}', `<span class="font-english text-accent-pink">${futureAge}</span>`);
+
+      return `
+        <div class="min-h-screen px-4 py-8">
+          <div class="max-w-3xl mx-auto">
+            <div class="mb-8 animate-fade-in">
+              <h1 class="text-2xl font-bold text-text-primary mb-2">${t('currentTitle')}</h1>
+              <p class="text-text-secondary">${subtitle}</p>
+            </div>
+
+            <div class="bg-bg-secondary rounded-card border border-accent-pink/30 p-4 mb-6 animate-fade-in">
+              <div class="flex items-start gap-3">
+                <span class="text-2xl">!</span>
+                <div>
+                  <h3 class="font-medium text-accent-pink mb-1">${t('currentRealityCheck')}</h3>
+                  <p class="text-sm text-text-secondary leading-relaxed">${t('currentRealityText')}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-bg-tertiary rounded-card border border-border p-4 mb-6 animate-fade-in">
+              <p class="text-sm text-text-secondary leading-relaxed">
+                <span class="text-accent-pink font-medium">${t('currentChartAbout')}</span><br>
+                ${t('currentChartDesc')}
+                <br><br>
+                <span class="font-english">${years}</span> ${currentLang === 'zh' ? '年后你的综合能量将从' : 'yrs later your total score will change from'} <span class="font-english text-accent-pink">${totalNow}</span> ${currentLang === 'zh' ? '变化到' : 'to'} <span class="font-english text-accent-pink">${totalLater}</span>。
+              </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              ${metrics.map((m, i) => `
+                <div class="bg-bg-secondary rounded-card border border-border p-4 animate-fade-in" style="animation-delay: ${0.1 * i}s">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <span>${m.icon}</span>
+                      <span class="font-medium text-text-primary">${m.label}</span>
+                    </div>
+                    ${m.final < 40 ? '<span class="text-accent-pink">!</span>' : ''}
+                  </div>
+                  <div class="flex items-baseline gap-2">
+                    <span class="font-english text-2xl font-bold text-text-primary">${m.final}</span>
+                    <span class="text-text-muted text-sm">/100</span>
+                  </div>
+                  <div class="mt-2 flex items-center gap-2 text-xs">
+                    <span class="text-text-muted">${t('currentNow')}: ${m.initial}</span>
+                    <span class="text-accent-pink">${m.final - m.initial < 0 ? '↓' : ''}${m.final - m.initial}</span>
+                  </div>
+                  <p class="mt-2 text-xs text-text-muted leading-relaxed">${m.desc}</p>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="bg-bg-secondary rounded-card border border-border p-6 mb-6 animate-fade-in">
+              <h2 class="font-semibold text-text-primary mb-2"><span class="font-english">${years}</span>${t('currentTrajectoryTitle')}</h2>
+              <p class="text-xs text-text-muted mb-4">${t('currentTrajectoryDesc')}</p>
+              <canvas id="mainChart" class="w-full" style="height: 280px;"></canvas>
+              <div class="flex flex-wrap justify-center gap-4 mt-4 text-sm">
+                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-[#FB7185]"></div><span>${t('currentHealth')}</span></div>
+                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-[#FBBF24]"></div><span>${t('currentFinance')}</span></div>
+                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-[#A78BFA]"></div><span>${t('currentRelationships')}</span></div>
+                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-[#22D3EE]"></div><span>${t('currentGrowth')}</span></div>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center animate-fade-in">
+              <button onclick="goToStep('probes')" class="text-text-secondary hover:text-text-primary px-4 py-2 transition-colors">
+                ${t('currentPrev')}
+              </button>
+              <button onclick="goToStep('core')" class="bg-accent-pink text-bg-primary px-5 py-2.5 rounded-btn font-medium hover:bg-accent-pink/90 transition-all">
+                ${t('currentNext')}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCoreParameter() {
+      const routine = state.userProfile.dailyRoutine;
+      const coreParam = analyzeCoreParameter(routine, state.userProfile.desiredFuture);
+
+      const metricLabels = {
+        '健康': t('currentHealth'), '健康': t('currentHealth'),
+        '财务': t('currentFinance'), '财务': t('currentFinance'),
+        '关系': t('currentRelationships'), '关系': t('currentRelationships'),
+        '成长': t('currentGrowth'), '成长': t('currentGrowth')
+      };
+
+      return `
+        <div class="min-h-screen px-4 py-8">
+          <div class="max-w-xl mx-auto">
+            <div class="mb-8 animate-fade-in">
+              <h1 class="text-2xl font-bold text-text-primary mb-2">${t('coreTitle')}</h1>
+              <p class="text-text-secondary">${t('coreSubtitle')}</p>
+            </div>
+
+            <div class="bg-bg-secondary rounded-card border-2 border-accent-pink p-6 mb-6 animate-fade-in">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-full bg-accent-pink/20 flex items-center justify-center">
+                  <span class="text-2xl">◎</span>
+                </div>
+                <div>
+                  <span class="text-xs font-medium text-accent-pink uppercase tracking-wider">${t('coreParamLabel')}</span>
+                  <h2 class="text-2xl font-bold text-text-primary">${coreParam.name}</h2>
+                </div>
+              </div>
+
+              <p class="text-text-secondary leading-relaxed mb-4">${coreParam.description}</p>
+
+              <p class="text-text-secondary leading-relaxed bg-bg-tertiary p-4 rounded-lg">
+                <span class="text-accent-pink font-medium">${t('coreWhyThis')}</span>
+                <br>
+                ${coreParam.reasoning}
+              </p>
+            </div>
+
+            ${coreParam.explanation.what ? `
+            <div class="bg-bg-secondary rounded-card border border-border p-6 mb-6 animate-fade-in">
+              <h3 class="font-semibold text-text-primary mb-3">${t('coreWhatIs')}</h3>
+              <p class="text-sm text-text-secondary leading-relaxed">${coreParam.explanation.what}</p>
+            </div>
+            ` : ''}
+
+            ${coreParam.explanation.whyItMatters ? `
+            <div class="bg-bg-secondary rounded-card border border-border p-6 mb-6 animate-fade-in">
+              <h3 class="font-semibold text-text-primary mb-3">${t('coreWhyImportant')}</h3>
+              <p class="text-sm text-text-secondary leading-relaxed">${coreParam.explanation.whyItMatters}</p>
+            </div>
+            ` : ''}
+
+            ${coreParam.explanation.currentIssue ? `
+            <div class="bg-bg-secondary rounded-card border border-accent-pink/30 p-6 mb-6 animate-fade-in">
+              <h3 class="font-semibold text-accent-pink mb-3">${t('coreCurrentStatus')}</h3>
+              <p class="text-sm text-text-secondary leading-relaxed">${coreParam.explanation.currentIssue}</p>
+            </div>
+            ` : ''}
+
+            <div class="bg-bg-secondary rounded-card border border-border p-6 mb-6 animate-fade-in">
+              <div class="flex items-center gap-2 mb-4">
+                <span class="text-xl">→</span>
+                <h3 class="font-semibold text-text-primary">${t('coreImpactChain')}</h3>
+              </div>
+              <p class="text-xs text-text-muted mb-3">${t('coreImpactChainDesc')}</p>
+
+              <div class="flex flex-wrap items-center gap-2">
+                ${coreParam.impactChain.map((step, i) => `
+                  <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 bg-bg-tertiary rounded-full text-sm text-text-primary">${step}</span>
+                    ${i < coreParam.impactChain.length - 1 ? '<span class="text-text-muted">→</span>' : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="bg-bg-secondary rounded-card border border-border p-6 mb-6 animate-fade-in">
+              <h3 class="font-semibold text-text-primary mb-3">${t('coreEffectEstimate')}</h3>
+              <p class="text-xs text-text-muted mb-4">${t('coreEffectDesc')}</p>
+              <div class="grid grid-cols-2 gap-3">
+                ${coreParam.affectedMetrics.map((m, i) => `
+                  <div class="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg animate-fade-in" style="animation-delay: ${0.1 * i}s">
+                    <span class="text-text-secondary">${metricLabels[m.metric] || m.metric}</span>
+                    <span class="font-english text-accent-pink">+${m.improvement}%</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center animate-fade-in">
+              <button onclick="goToStep('current')" class="text-text-secondary hover:text-text-primary px-4 py-2 transition-colors">
+                ${t('corePrev')}
+              </button>
+              <button onclick="goToStep('micro')" class="bg-accent-pink text-bg-primary px-5 py-2.5 rounded-btn font-medium hover:bg-accent-pink/90 transition-all">
+                ${t('coreNext')}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMicroAction() {
+      const routine = state.userProfile.dailyRoutine;
+      const age = state.userProfile.age || 25;
+      const coreParam = analyzeCoreParameter(routine, state.userProfile.desiredFuture);
+      const baseScores = calculateBaseScores(routine);
+      const microActions = generateMicroActions(routine, coreParam.param, baseScores, age);
+
+      const currentTrajectory = generateTrajectory(routine);
+      const improvement = calculateRealisticImprovement(coreParam.param, baseScores);
+      const newTrajectory = generateImprovedTrajectory(routine, coreParam.param, improvement);
+
+      const months = currentTrajectory.length - 1;
+      const years = Math.round(months / 12);
+
+      const currentFinal = currentTrajectory[currentTrajectory.length - 1].overall;
+      const newFinal = newTrajectory[newTrajectory.length - 1].overall;
+
+      const subtitle = t('microSubtitle').replace('{param}', coreParam.name);
+
+      return `
+        <div class="min-h-screen px-4 py-8">
+          <div class="max-w-3xl mx-auto">
+            <div class="mb-8 text-center animate-fade-in">
+              <div class="text-4xl mb-4">◎</div>
+              <h1 class="text-2xl font-bold text-text-primary mb-2">${t('microTitle')}</h1>
+              <p class="text-text-secondary max-w-md mx-auto">${subtitle}</p>
+            </div>
+
+            <div class="bg-bg-secondary rounded-card border border-accent-pink/30 p-4 mb-6 animate-fade-in">
+              <div class="flex items-start gap-3">
+                <span class="text-xl">!</span>
+                <div>
+                  <h3 class="font-medium text-accent-pink mb-1">${t('microDesignPrinciple')}</h3>
+                  <p class="text-sm text-text-secondary">${t('microDesignText')}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-3 mb-8">
+              ${microActions.map((action, i) => `
+                <div class="bg-bg-secondary rounded-card border border-border p-5 animate-fade-in" style="animation-delay: ${0.1 * i}s">
+                  <div class="flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full bg-accent-pink/20 flex items-center justify-center flex-shrink-0">
+                      <span class="font-english text-accent-pink font-bold">${i + 1}</span>
+                    </div>
+                    <div class="flex-1">
+                      <h3 class="font-medium text-text-primary mb-2">${action.action}</h3>
+                      <div class="flex flex-wrap gap-3 text-sm">
+                        <div class="flex items-center gap-1 text-text-muted">
+                          <span>→</span><span>${action.trigger}</span>
+                        </div>
+                        <div class="flex items-center gap-1 text-text-muted">
+                          <span class="font-english">${action.duration}</span>
+                        </div>
+                      </div>
+                      <p class="mt-2 text-sm text-text-secondary bg-bg-tertiary p-2 rounded border-l-2 border-accent-pink/50">${action.why}</p>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="bg-bg-secondary rounded-card border border-border p-6 mb-6 animate-fade-in">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-xl">↗</span>
+                <h3 class="font-semibold text-text-primary">${t('microCompareTitle')}</h3>
+              </div>
+              <p class="text-xs text-text-muted mb-4">${t('microCompareDesc')}</p>
+
+              <canvas id="comparisonChart" class="w-full" style="height: 220px;"></canvas>
+
+              <div class="flex justify-center gap-4 mt-4 text-sm">
+                <div class="flex items-center gap-2"><div class="w-6 h-0.5" style="border-top: 2px dashed #6B6B75"></div><span>${t('microCompareOriginal')}</span></div>
+                <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-accent-pink"></div><span>${t('microCompareNew')}</span></div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="text-center p-3 bg-bg-tertiary rounded-lg">
+                  <p class="text-xs text-text-muted mb-1"><span class="font-english">${years}${t('microCompareNoChange')}</p>
+                  <p class="font-english text-xl font-bold text-text-muted">${currentFinal}</p>
+                </div>
+                <div class="text-center p-3 bg-bg-tertiary rounded-lg">
+                  <p class="text-xs text-text-muted mb-1"><span class="font-english">${years}${t('microCompareWithChange')}</p>
+                  <p class="font-english text-xl font-bold text-accent-pink">${newFinal}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-3 animate-fade-in">
+              <button onclick="goToStep('welcome'); resetApp();" class="bg-accent-pink text-bg-primary px-8 py-3.5 rounded-btn font-medium text-lg hover:bg-accent-pink/90 transition-all">
+                ${t('microStartBtn')}
+              </button>
+              <div class="flex gap-3">
+                <button onclick="goToStep('core')" class="flex-1 text-text-secondary hover:text-text-primary px-4 py-2 transition-colors border border-border rounded-btn">
+                  ${t('microRestart')}
+                </button>
+                <button onclick="resetApp();" class="flex-1 text-text-secondary hover:text-text-primary px-4 py-2 transition-colors border border-border rounded-btn">
+                  ${t('microReset')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==================== GLOBAL FUNCTIONS ====================
+    window.goToStep = function(step) {
+      state.currentStep = step;
+      saveState();
+      render();
+
+      if (step === 'current') {
+        setTimeout(() => {
+          const routine = state.userProfile.dailyRoutine;
+          const trajectory = generateTrajectory(routine);
+          const sampled = trajectory.filter((_, i) => i % 3 === 0);
+          drawLineChart('mainChart', sampled, { metrics: ['health', 'finance', 'relationships', 'growth'] });
+        }, 100);
+      }
+
+      if (step === 'micro') {
+        setTimeout(() => {
+          const routine = state.userProfile.dailyRoutine;
+          const coreParam = analyzeCoreParameter(routine, state.userProfile.desiredFuture);
+          const baseScores = calculateBaseScores(routine);
+          const improvement = calculateRealisticImprovement(coreParam.param, baseScores);
+          const currentTrajectory = generateTrajectory(routine);
+          const newTrajectory = generateImprovedTrajectory(routine, coreParam.param, improvement);
+
+          const sampled = currentTrajectory.filter((_, i) => i % 3 === 0);
+          const newSampled = newTrajectory.filter((_, i) => i % 3 === 0);
+
+          drawComparisonChart('comparisonChart', sampled, newSampled);
+        }, 100);
+      }
+    };
+
+    window.resetApp = function() {
+      if (confirm(t('resetConfirm'))) {
+        localStorage.removeItem(STORAGE_KEY);
+        state = {
+          currentStep: 'welcome',
+          userProfile: {
+            age: 25,
+            dailyRoutine: JSON.parse(JSON.stringify(defaultDailyRoutine)),
+            probeAnswers: [],
+            desiredFuture: JSON.parse(JSON.stringify(defaultDesiredFuture)),
+            results: null
+          },
+          completedModules: [],
+          pendingProbes: []
+        };
+        render();
+      }
+    };
+
+    window.toggleModule = function(key) {
+      const content = document.querySelector(`.module-content-${key}`);
+      const arrow = document.querySelector(`.module-arrow-${key}`);
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+      } else {
+        content.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+      }
+    };
+
+    window.updateRoutine = function(section, field, value) {
+      state.userProfile.dailyRoutine[section][field] = value;
+      saveState();
+    };
+
+    window.updateUserAge = function(age) {
+      state.userProfile.age = age;
+      saveState();
+    };
+
+    window.addEventListener('resize', function() {
+      if (state.currentStep === 'current') {
+        const routine = state.userProfile.dailyRoutine;
+        const trajectory = generateTrajectory(routine);
+        const sampled = trajectory.filter((_, i) => i % 3 === 0);
+        drawLineChart('mainChart', sampled, { metrics: ['health', 'finance', 'relationships', 'growth'] });
+      }
+      if (state.currentStep === 'micro') {
+        const routine = state.userProfile.dailyRoutine;
+        const coreParam = analyzeCoreParameter(routine, state.userProfile.desiredFuture);
+        const baseScores = calculateBaseScores(routine);
+        const improvement = calculateRealisticImprovement(coreParam.param, baseScores);
+        const currentTrajectory = generateTrajectory(routine);
+        const newTrajectory = generateImprovedTrajectory(routine, coreParam.param, improvement);
+        const sampled = currentTrajectory.filter((_, i) => i % 3 === 0);
+        const newSampled = newTrajectory.filter((_, i) => i % 3 === 0);
+        drawComparisonChart('comparisonChart', sampled, newSampled);
+      }
+    });
+
+    // ==================== RENDER ====================
+    function render() {
+      const app = document.getElementById('app');
+
+      let header = '';
+      let footer = '';
+
+      if (state.currentStep !== 'welcome') {
+        header = `
+          <header class="sticky top-0 z-50 bg-bg-primary/80 backdrop-blur-lg border-b border-border px-4 py-4">
+            <div class="max-w-3xl mx-auto">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2 font-bold text-lg text-text-primary">
+                  <span class="font-english">Life Modelling</span>
+                  <span class="text-accent-pink">${t('appSubtitle')}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <button onclick="toggleLang();" class="text-sm px-3 py-1.5 rounded-btn border border-border text-text-secondary hover:text-text-primary hover:border-accent-pink/50 transition-colors font-english">
+                    ${currentLang === 'zh' ? 'EN' : '中'}
+                  </button>
+                  <button onclick="resetApp();" class="text-sm text-text-muted hover:text-text-secondary transition-colors">${t('footerRestart')}</button>
+                </div>
+              </div>
+              ${ProgressIndicator()}
+            </div>
+          </header>
+        `;
+      } else {
+        // Also show lang toggle on welcome page
+        header = `
+          <header class="fixed top-0 right-0 z-50 px-4 py-4">
+            <button onclick="toggleLang();" class="text-sm px-3 py-1.5 rounded-btn border border-border text-text-secondary hover:text-text-primary hover:border-accent-pink/50 transition-colors font-english">
+              ${currentLang === 'zh' ? 'EN' : '中'}
+            </button>
+          </header>
+        `;
+      }
+
+      let content = '';
+      switch (state.currentStep) {
+        case 'welcome': content = renderWelcome(); break;
+        case 'daily': content = renderDailyInput(); break;
+        case 'probes': content = renderProbes(); break;
+        case 'current': content = renderCurrentTrajectory(); break;
+        case 'core': content = renderCoreParameter(); break;
+        case 'micro': content = renderMicroAction(); break;
+      }
+
+      app.innerHTML = header + `<main class="flex-1">${content}</main>` + footer;
+    }
+
+    // ==================== INIT ====================
+    loadState();
+    render();
+  </script>
+</body>
+</html>
